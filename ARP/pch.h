@@ -9,5 +9,9 @@
 
 // 여기에 미리 컴파일하려는 헤더 추가
 #include "framework.h"
+#include "BaseLayer.h"
+#include "EthernetLayer.h"
+#include "LayerManager.h"
+#include "IPLayer.h"
 
 #endif //PCH_H
