@@ -13,5 +13,6 @@
 #include "EthernetLayer.h"
 #include "LayerManager.h"
 #include "IPLayer.h"
+#include "ARPLayer.h"
 
 #endif //PCH_H
