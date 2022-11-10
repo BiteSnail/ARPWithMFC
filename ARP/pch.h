@@ -14,5 +14,6 @@
 #include "LayerManager.h"
 #include "IPLayer.h"
 #include "ARPLayer.h"
+#include "NILayer.h"
 
 #endif //PCH_H
