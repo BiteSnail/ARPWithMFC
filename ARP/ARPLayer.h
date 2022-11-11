@@ -9,8 +9,8 @@ class ARPLayer :
 private:
     inline void     ResetHeader();
 public:
-    BOOL            Recieve(unsigned char* ppayload);
-    BOOL            SEND(unsigned char* ppayload, int nlength);
+    BOOL            Receive(unsigned char* ppayload);
+    BOOL            Send(unsigned char* ppayload, int nlength);
 
     ARPLayer(char* pName);
     virtual ~ARPLayer();
@@ -19,7 +19,7 @@ public:
         unsigned char   protocol_addr[IP_ADDR_SIZE];
         unsigned char   hardware_addr[ENET_ADDR_SIZE];
         bool            status;
-        unsigned int    ID;
+        CTime           spanTime;
         bool operator==(const unsigned char* ipaddr) {
             return memcmp(protocol_addr, ipaddr, IP_ADDR_SIZE)==0;
         }
