@@ -17,17 +17,33 @@ static char THIS_FILE[] = __FILE__;
 CNILayer::CNILayer(char* pName)
 	: CBaseLayer(pName), device(NULL) {
 	char errbuf[PCAP_ERRBUF_SIZE];
+	try {
 		if (pcap_findalldevs(&allDevices, errbuf) == -1)
-	{
-		fprintf(stderr, "Error in pcap_findalldevs: %s\n", errbuf);
-		allDevices = NULL;
+		{
+			allDevices = NULL;
+			//fprintf(stderr, "Error in pcap_findalldevs: %s\n", errbuf);
+			throw(CString(errbuf));
+		}
 	}
-
-	OidData = (PPACKET_OID_DATA)malloc(sizeof(PACKET_OID_DATA));
-	OidData->Oid = 0;
-	OidData->Length = 6;
-	m_AdapterObject = nullptr;
-	memset(data, 0, ETHER_MAX_SIZE);
+	catch(CString errorInfo) {
+		AfxMessageBox(errorInfo);
+		return;
+	}
+	
+	try {
+		OidData = (PPACKET_OID_DATA)malloc(sizeof(PACKET_OID_DATA));
+		if (OidData == nullptr) {
+			throw(CString("MALLOC FAIL"));
+		}
+		OidData->Oid = 0;
+		OidData->Length = 6;
+		m_AdapterObject = nullptr;
+		memset(data, 0, ETHER_MAX_SIZE);
+	}
+	catch(CString errorInfo) {
+		AfxMessageBox(errorInfo);
+		return;
+	}
 }
 
 CNILayer::~CNILayer() {
