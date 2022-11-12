@@ -26,8 +26,8 @@ public:
         unsigned char   hardware_addr[ENET_ADDR_SIZE];
         bool            status;
         CTime           spanTime;
-        struct _ARP_NODE(unsigned int ipaddr = 0, unsigned int enetaddr = 0, bool incomplete = false);
-        struct _ARP_NODE(unsigned char* ipaddr, unsigned char* enetaddr, bool incomplete = false);
+        struct _ARP_NODE(unsigned int ipaddr, unsigned int enetaddr, bool incomplete);
+        struct _ARP_NODE(unsigned char* cipaddr, unsigned char* cenetaddr, bool bincomplete);
         struct _ARP_NODE(const struct _ARP_NODE& ot);
 
         bool operator==(const unsigned char* ipaddr);
@@ -52,6 +52,7 @@ public:
         struct _ARP_HEADER(const struct _ARP_HEADER& ot);
     } ARP_HEADER, *PARP_HEADER;
 
+    //DEBUG
     typedef struct _IP_HEADER {
         unsigned char   ver_hlegnth;
         unsigned char   tos;
