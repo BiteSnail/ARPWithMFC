@@ -1,7 +1,9 @@
 #pragma once
 #include "BaseLayer.h"
 #include "pch.h"
-class IPLayer :
+class CIPLayer :
     public CBaseLayer
 {
+public:
+    CIPLayer(char* pName);
 };

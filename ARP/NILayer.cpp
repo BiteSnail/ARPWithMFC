@@ -17,6 +17,9 @@ static char THIS_FILE[] = __FILE__;
 CNILayer::CNILayer(char* pName)
 	: CBaseLayer(pName), device(NULL) {
 	char errbuf[PCAP_ERRBUF_SIZE];
+	m_AdapterObject = nullptr;
+	OidData = nullptr;
+	memset(data, 0, ETHER_MAX_SIZE);
 	try {
 		if (pcap_findalldevs(&allDevices, errbuf) == -1)
 		{
@@ -35,7 +38,7 @@ CNILayer::CNILayer(char* pName)
 		if (OidData == nullptr) {
 			throw(CString("MALLOC FAIL"));
 		}
-		OidData->Oid = 0;
+		OidData->Oid = 0x01010101;
 		OidData->Length = 6;
 		m_AdapterObject = nullptr;
 		memset(data, 0, ETHER_MAX_SIZE);
@@ -77,17 +80,24 @@ BOOL CNILayer::Send(unsigned char* ppayload, int nlength) {
 	return TRUE;
 }
 
+void CNILayer::SetAdapterComboBox(CComboBox& adapterlist) {
+	for (pcap_if_t* d = allDevices; d; d = d->next) {
+		adapterlist.AddString(CString(d->description));
+	}
+}
+
 UCHAR* CNILayer::SetAdapter(const int index) { 
 	char errbuf[PCAP_ERRBUF_SIZE];
 	device = allDevices;
 	for (int i = 0; i < index && device; i++) {
 		device = device->next;
 	}
-	m_AdapterObject = pcap_open_live((const char*)device->name, 65536, 0, 1000, errbuf);
+	if (device != nullptr)
+		m_AdapterObject = pcap_open_live((const char*)device->name, 65536, 0, 1000, errbuf);
 	if (m_AdapterObject == nullptr)
 	{
 		AfxMessageBox(_T("Fail: Connect Adapter"));
-		return 0;
+		return nullptr;
 	}
 
 	adapter = PacketOpenAdapter(device->name);
@@ -98,6 +108,7 @@ UCHAR* CNILayer::SetAdapter(const int index) {
 
 	return (OidData->Data);
 }
+
 
 void CNILayer::GetMacAddressList(CStringArray& adapterlist) {
 	for (pcap_if_t* d = allDevices; d; d = d->next) {

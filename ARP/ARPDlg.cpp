@@ -51,20 +51,34 @@ END_MESSAGE_MAP()
 
 
 CARPDlg::CARPDlg(CWnd* pParent /*=nullptr*/)
-	: CDialogEx(IDD_ARP_DIALOG, pParent)
+	: CDialogEx(IDD_ARP_DIALOG, pParent),
+	CBaseLayer("Dlg")
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+	
+	m_LayerMgr.AddLayer(new CARPLayer("ARP"));
+	m_LayerMgr.AddLayer(new CIPLayer("Network"));
+	m_LayerMgr.AddLayer(new CEthernetLayer("Ethernet"));
+	m_LayerMgr.AddLayer(new CNILayer("NI"));
+	m_LayerMgr.AddLayer(this);
+	
+	m_LayerMgr.ConnectLayers("NI ( *Ethernet ( *Network ( *Dlg  -ARP ) *ARP ) )");
 }
 
 void CARPDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_LIST_ARPTABLE, m_ListARPTable);
+	DDX_Control(pDX, IDC_COMBO_ADAPTER, m_ComboAdapter);
 }
 
 BEGIN_MESSAGE_MAP(CARPDlg, CDialogEx)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
+	ON_WM_TIMER()
+	ON_CBN_SELCHANGE(IDC_COMBO_ADAPTER, &CARPDlg::OnCbnSelchangeComboAdapter)
+	ON_BN_CLICKED(IDSELECT, &CARPDlg::OnBnClickedSelect)
 END_MESSAGE_MAP()
 
 
@@ -100,6 +114,34 @@ BOOL CARPDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
+	CRect rt;
+	m_ListARPTable.GetWindowRect(&rt);
+	char aa[] = "11:11:11:11:11:11";
+	unsigned char add[6];
+	int cx = rt.right - rt.left;
+
+	m_ListARPTable.SetExtendedStyle(LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
+	m_ListARPTable.InsertColumn(1, _T("IP Address"), LVCFMT_CENTER, int(cx * 0.3));
+	m_ListARPTable.InsertColumn(2, _T("MAC Address"), LVCFMT_CENTER, int(cx * 0.5));
+	m_ListARPTable.InsertColumn(3, _T("Status"), LVCFMT_CENTER, int(cx * 0.2));
+
+	int num = m_ListARPTable.GetItemCount();
+	m_ListARPTable.InsertItem(num, _T("111.111.111.111"));
+	m_ListARPTable.SetItem(num, 1, LVIF_TEXT, _T("11:11:11:11:11:11"),NULL, NULL, NULL, NULL);
+	m_ListARPTable.SetItem(num, 2, LVIF_TEXT, _T("Incomplete"), NULL, NULL, NULL, NULL);
+
+	sscanf_s(aa, "%hhu:%hhu:%hhu:%hhu:%hhu:%hhu", add, add + 1, add + 2, add + 3, add + 4, add + 5);
+	//for (int i = 0; i < 6; i++) {
+	//	CString d;
+	//	d.Format(_T("%d"), add[i]);
+	//	AfxMessageBox(d);
+	//}
+	
+	//recieve Adapter info
+	m_NILayer = new CNILayer("Network");
+	m_NILayer->SetAdapterComboBox(m_ComboAdapter);
+
+	CDialog::SetDlgItemTextW(IDC_EDIT_MAC, _T(DEFAULT_EDIT_TEXT));
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -153,3 +195,48 @@ HCURSOR CARPDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+
+
+void CARPDlg::OnTimer(UINT_PTR nIDEvent)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+
+	CDialogEx::OnTimer(nIDEvent);
+}
+
+
+void CARPDlg::OnCbnSelchangeComboAdapter()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	CString toText;
+	unsigned char* macaddr = m_NILayer->SetAdapter(m_ComboAdapter.GetCurSel());
+	if (macaddr == nullptr) {
+		toText = DEFAULT_EDIT_TEXT;
+	}
+	else {
+		toText.Format(_T("%hhx:%hhx:%hhx:%hhx:%hhx:%hhx"), macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5]);
+	}
+	CDialog::SetDlgItemTextW(IDC_EDIT_MAC, toText);
+}
+
+
+void CARPDlg::OnBnClickedSelect()
+{
+	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	// TODO: Add Thread
+	CString editText;
+	CDialog::GetDlgItemTextW(IDC_EDIT_MAC, editText);
+	if (m_ComboAdapter.IsWindowEnabled()) {
+		if (editText != DEFAULT_EDIT_TEXT) {
+			m_ComboAdapter.EnableWindow(FALSE);
+			CDialog::SetDlgItemTextW(IDSELECT, _T("ReSelect"));
+		}
+		else {
+			AfxMessageBox(_T("Need Selecting Adapter"));
+		}
+	}
+	else {
+		m_ComboAdapter.EnableWindow(TRUE);
+		CDialog::SetDlgItemTextW(IDSELECT, _T("Select"));
+	}
+}

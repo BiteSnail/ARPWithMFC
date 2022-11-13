@@ -4,9 +4,16 @@
 
 #pragma once
 
+#include "LayerManager.h"
+#include "ARPLayer.h"
+#include "IPLayer.h"
+#include "EthernetLayer.h"
+#include "NILayer.h"
+
+#define DEFAULT_EDIT_TEXT "-"
 
 // CARPDlg 대화 상자
-class CARPDlg : public CDialogEx
+class CARPDlg : public CDialogEx, public CBaseLayer
 {
 // 생성입니다.
 public:
@@ -31,4 +38,20 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
+private:
+	CLayerManager	m_LayerMgr;
+public:
+	//Object
+	//CIPLayer*		m_IPLayer;
+	CARPLayer*		m_ARPLayer;
+	CEthernetLayer*	m_EtherLayer;
+	CNILayer*		m_NILayer;
+
+	CListCtrl		m_ListARPTable;
+	CComboBox		m_ComboAdapter;
+public:
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnCbnSelchangeComboAdapter();
+	afx_msg void OnBnClickedSelect();
+
 };

@@ -12,12 +12,13 @@ class CNILayer :
 
 public:
     CNILayer(char* pName);
-    ~CNILayer();
+    virtual ~CNILayer();
     virtual BOOL    Receive(unsigned char* pkt) override;
     virtual BOOL    Send(unsigned char* ppayload, int nlength) override;
-    UCHAR* SetAdapter(const int index); //set inum, return value is MAC ADDRESS
-    void GetMacAddressList(CStringArray& adapterlist);
-    static UINT ThreadFunction_RECEIVE(LPVOID pParam);
+    UCHAR*          SetAdapter(const int index); //set inum, return value is MAC ADDRESS
+    void            SetAdapterComboBox(CComboBox& adpaterlist);
+    void            GetMacAddressList(CStringArray& adapterlist);
+    static UINT     ThreadFunction_RECEIVE(LPVOID pParam);
     void Receiveflip();
 protected:
     pcap_if_t* allDevices; //all information of 

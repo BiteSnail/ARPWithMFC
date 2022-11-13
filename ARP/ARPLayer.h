@@ -3,7 +3,7 @@
 #include "pch.h"
 #include <vector>
 
-class ARPLayer :
+class CARPLayer :
     public CBaseLayer
 {
 private:
@@ -18,8 +18,8 @@ public:
     void            setDstAddr(const unsigned char enetAddr[], const unsigned char ipAddr[]);
     void            swapaddr(unsigned char lAddr[], unsigned char rAddr[], const unsigned char size);
 
-    ARPLayer(char* pName);
-    virtual ~ARPLayer();
+    CARPLayer(char* pName);
+    virtual ~CARPLayer();
 
     typedef struct _ARP_NODE {
         unsigned char   protocol_addr[IP_ADDR_SIZE];
