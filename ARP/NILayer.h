@@ -18,6 +18,7 @@ public:
     UCHAR*          SetAdapter(const int index); //set inum, return value is MAC ADDRESS
     void            SetAdapterComboBox(CComboBox& adpaterlist);
     void            GetMacAddressList(CStringArray& adapterlist);
+    void            GetIPAddress(CString& ipv4addr, CString& ipv6addr);
     static UINT     ThreadFunction_RECEIVE(LPVOID pParam);
     void Receiveflip();
 protected:

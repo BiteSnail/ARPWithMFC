@@ -12,6 +12,9 @@
 #define IDC_STATIC_MAC                  1002
 #define IDC_EDIT_MAC                    1003
 #define IDSELECT                        1004
+#define IDC_IPADDRESS_V4                1005
+#define IDC_EDIT_IP                     1006
+#define IDSEND                          1007
 
 // Next default values for new objects
 // 
@@ -19,7 +22,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        132
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1005
+#define _APS_NEXT_CONTROL_VALUE         1008
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

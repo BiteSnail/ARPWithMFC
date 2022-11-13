@@ -89,6 +89,9 @@ void CNILayer::SetAdapterComboBox(CComboBox& adapterlist) {
 UCHAR* CNILayer::SetAdapter(const int index) { 
 	char errbuf[PCAP_ERRBUF_SIZE];
 	device = allDevices;
+	if(m_AdapterObject != nullptr)
+		pcap_close(m_AdapterObject);
+
 	for (int i = 0; i < index && device; i++) {
 		device = device->next;
 	}
@@ -113,6 +116,32 @@ UCHAR* CNILayer::SetAdapter(const int index) {
 void CNILayer::GetMacAddressList(CStringArray& adapterlist) {
 	for (pcap_if_t* d = allDevices; d; d = d->next) {
 		adapterlist.Add(CString(d->description));
+	}
+}
+
+void CNILayer::GetIPAddress(CString& ipv4addr, CString& ipv6addr) {
+	char ip[IPV6_ADDR_STR_LEN];
+	ipv4addr = DEFAULT_EDIT_TEXT;
+	ipv6addr = DEFAULT_EDIT_TEXT;
+
+	for (auto addr = device->addresses; addr != nullptr; addr = addr->next)
+	{
+		auto realaddr = addr->addr;
+		const int sa_family = realaddr->sa_family;
+
+		const char* ptr = inet_ntop(sa_family, &realaddr->sa_data[sa_family == AF_INET ? 2 : 6], ip, IPV6_ADDR_STR_LEN);
+
+		switch (sa_family)
+		{
+		case AF_INET:
+			ipv4addr = ptr;
+			break;
+		case AF_INET6:
+			ipv6addr = ptr;
+			break;
+		default:
+			return;
+		}
 	}
 }
 

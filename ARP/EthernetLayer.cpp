@@ -41,18 +41,14 @@ unsigned char* CEthernetLayer::GetSourceAddress()
 
 unsigned char* CEthernetLayer::GetDestinAddress()
 {
-	//////////////////////// fill the blank ///////////////////////////////
 	// Ethernet 목적지 주소 return
 	return m_sHeader.enet_dstaddr;
-	///////////////////////////////////////////////////////////////////////
 }
 
 void CEthernetLayer::SetSourceAddress(unsigned char* pAddress)
 {
-	//////////////////////// fill the blank ///////////////////////////////
 		// 넘겨받은 source 주소를 Ethernet source주소로 지정
 	memcpy(m_sHeader.enet_srcaddr, pAddress, 6);
-	///////////////////////////////////////////////////////////////////////
 }
 
 void CEthernetLayer::SetDestinAddress(unsigned char* pAddress)
@@ -62,10 +58,21 @@ void CEthernetLayer::SetDestinAddress(unsigned char* pAddress)
 
 BOOL CEthernetLayer::Send(unsigned char* ppayload, int nlength, unsigned short type)
 {
-	// 윗 계층에서 받은 App 계층의 Frame 길이만큼을 Ethernet계층의 data로 넣는다.
+	// 윗 계층에서 받은 Frame 길이만큼을 Ethernet계층의 data로 넣는다.
 	memcpy(m_sHeader.enet_data, ppayload, nlength);
 	// 윗 계층에서 받은 type 또한 헤더에 포함시킨다.
 	m_sHeader.enet_type = type;
+	BOOL bSuccess = FALSE;
+
+	bSuccess = this->GetUnderLayer()->Send((unsigned char*)&m_sHeader, ETHER_HEADER_SIZE + nlength);
+	return bSuccess;
+}
+
+BOOL CEthernetLayer::Send(unsigned char* ppayload, int nlength)
+{
+	// 윗 계층에서 받은 App 계층의 Frame 길이만큼을 Ethernet계층의 data로 넣는다.
+	memcpy(m_sHeader.enet_data, ppayload, nlength);
+	// 윗 계층에서 받은 type 또한 헤더에 포함시킨다.
 	BOOL bSuccess = FALSE;
 	//////////////////////// fill the blank ///////////////////////////////
 
@@ -76,20 +83,22 @@ BOOL CEthernetLayer::Send(unsigned char* ppayload, int nlength, unsigned short t
 	return bSuccess;
 }
 
+
 BOOL CEthernetLayer::Receive(unsigned char* ppayload)
 {
 	PETHERNET_HEADER pFrame = (PETHERNET_HEADER)ppayload;
 
 	BOOL bSuccess = FALSE;
-	//////////////////////// fill the blank ///////////////////////////////
 	if(memcmp(pFrame->enet_dstaddr, m_sHeader.enet_srcaddr, sizeof(m_sHeader.enet_srcaddr))==0){//주소 확인
 			// enet_type을 기준으로 Ethernet Frame의 data를 넘겨줄 레이어를 지정한다.
-		if (pFrame->enet_type == 0x2080)
-			bSuccess = mp_aUpperLayer[0]->Receive(pFrame->enet_data);//mp_aUpperLayer[0] == ChatApp
-		else if(pFrame->enet_type == 0x2090)
+		switch (pFrame->enet_type) {
+		case 0x0608:
 			bSuccess = mp_aUpperLayer[1]->Receive(pFrame->enet_data);//mp_aUpperLayer[1] == FileApp
+			break;
+		default:
+			break;
+		}			
 	}
-	///////////////////////////////////////////////////////////////////////
 
 	return bSuccess;
 }

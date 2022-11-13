@@ -51,15 +51,29 @@ END_MESSAGE_MAP()
 
 
 CARPDlg::CARPDlg(CWnd* pParent /*=nullptr*/)
-	: CDialogEx(IDD_ARP_DIALOG, pParent),
-	CBaseLayer("Dlg")
+	: CDialogEx(IDD_ARP_DIALOG, pParent)
+	, CBaseLayer("Dlg")
+	, m_ARPLayer(nullptr)
+	, m_EtherLayer(nullptr)
+	, m_NILayer(nullptr)
+	, m_IPLayer(nullptr)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	
-	m_LayerMgr.AddLayer(new CARPLayer("ARP"));
-	m_LayerMgr.AddLayer(new CIPLayer("Network"));
-	m_LayerMgr.AddLayer(new CEthernetLayer("Ethernet"));
-	m_LayerMgr.AddLayer(new CNILayer("NI"));
+	m_ARPLayer = new CARPLayer("ARP");
+	m_IPLayer = new CIPLayer("Network");
+	m_EtherLayer = new CEthernetLayer("Ethernet");
+	m_NILayer = new CNILayer("NI");
+	
+	if (m_ARPLayer == nullptr || m_IPLayer == nullptr || m_EtherLayer == nullptr || m_NILayer == nullptr) {
+		AfxMessageBox(_T("Fail : Layer Link"));
+		return;
+	}
+
+	m_LayerMgr.AddLayer(m_ARPLayer);
+	m_LayerMgr.AddLayer(m_IPLayer);
+	m_LayerMgr.AddLayer(m_EtherLayer);
+	m_LayerMgr.AddLayer(m_NILayer);
 	m_LayerMgr.AddLayer(this);
 	
 	m_LayerMgr.ConnectLayers("NI ( *Ethernet ( *Network ( *Dlg  -ARP ) *ARP ) )");
@@ -70,6 +84,7 @@ void CARPDlg::DoDataExchange(CDataExchange* pDX)
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_LIST_ARPTABLE, m_ListARPTable);
 	DDX_Control(pDX, IDC_COMBO_ADAPTER, m_ComboAdapter);
+	DDX_Control(pDX, IDC_IPADDRESS_V4, m_Addr);
 }
 
 BEGIN_MESSAGE_MAP(CARPDlg, CDialogEx)
@@ -79,6 +94,7 @@ BEGIN_MESSAGE_MAP(CARPDlg, CDialogEx)
 	ON_WM_TIMER()
 	ON_CBN_SELCHANGE(IDC_COMBO_ADAPTER, &CARPDlg::OnCbnSelchangeComboAdapter)
 	ON_BN_CLICKED(IDSELECT, &CARPDlg::OnBnClickedSelect)
+	ON_BN_CLICKED(IDSEND, &CARPDlg::OnBnClickedSend)
 END_MESSAGE_MAP()
 
 
@@ -114,35 +130,13 @@ BOOL CARPDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
-	CRect rt;
-	m_ListARPTable.GetWindowRect(&rt);
-	char aa[] = "11:11:11:11:11:11";
-	unsigned char add[6];
-	int cx = rt.right - rt.left;
+	SetTable();
+	SetComboBox();
 
-	m_ListARPTable.SetExtendedStyle(LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
-	m_ListARPTable.InsertColumn(1, _T("IP Address"), LVCFMT_CENTER, int(cx * 0.3));
-	m_ListARPTable.InsertColumn(2, _T("MAC Address"), LVCFMT_CENTER, int(cx * 0.5));
-	m_ListARPTable.InsertColumn(3, _T("Status"), LVCFMT_CENTER, int(cx * 0.2));
-
-	int num = m_ListARPTable.GetItemCount();
-	m_ListARPTable.InsertItem(num, _T("111.111.111.111"));
-	m_ListARPTable.SetItem(num, 1, LVIF_TEXT, _T("11:11:11:11:11:11"),NULL, NULL, NULL, NULL);
-	m_ListARPTable.SetItem(num, 2, LVIF_TEXT, _T("Incomplete"), NULL, NULL, NULL, NULL);
-
-	sscanf_s(aa, "%hhu:%hhu:%hhu:%hhu:%hhu:%hhu", add, add + 1, add + 2, add + 3, add + 4, add + 5);
-	//for (int i = 0; i < 6; i++) {
-	//	CString d;
-	//	d.Format(_T("%d"), add[i]);
-	//	AfxMessageBox(d);
-	//}
+	unsigned char broadcast[6] = { 255, 255, 255, 255, 255, 255 };
+	m_EtherLayer->SetDestinAddress(broadcast);
 	
-	//recieve Adapter info
-	m_NILayer = new CNILayer("Network");
-	m_NILayer->SetAdapterComboBox(m_ComboAdapter);
-
-	CDialog::SetDlgItemTextW(IDC_EDIT_MAC, _T(DEFAULT_EDIT_TEXT));
-
+	
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
 
@@ -195,48 +189,140 @@ HCURSOR CARPDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-
-
 void CARPDlg::OnTimer(UINT_PTR nIDEvent)
 {
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-
+	switch (nIDEvent) {
+	case 1:
+		updateTable();
+		break;
+	default:
+		break;
+	}
 	CDialogEx::OnTimer(nIDEvent);
 }
 
 
 void CARPDlg::OnCbnSelchangeComboAdapter()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	CString toText;
+	CString MAC, IPV4, IPV6;
 	unsigned char* macaddr = m_NILayer->SetAdapter(m_ComboAdapter.GetCurSel());
 	if (macaddr == nullptr) {
-		toText = DEFAULT_EDIT_TEXT;
+		MAC = DEFAULT_EDIT_TEXT;
 	}
 	else {
-		toText.Format(_T("%hhx:%hhx:%hhx:%hhx:%hhx:%hhx"), macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5]);
+		MAC.Format(_T("%hhx:%hhx:%hhx:%hhx:%hhx:%hhx"), macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5]);
+		m_EtherLayer->SetSourceAddress(macaddr);
+		m_NILayer->GetIPAddress(IPV4, IPV6);
 	}
-	CDialog::SetDlgItemTextW(IDC_EDIT_MAC, toText);
+	CDialog::SetDlgItemTextW(IDC_EDIT_MAC, MAC);
+	CDialog::SetDlgItemTextW(IDC_EDIT_IP, IPV4);
 }
 
 
 void CARPDlg::OnBnClickedSelect()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	// TODO: Add Thread
-	CString editText;
-	CDialog::GetDlgItemTextW(IDC_EDIT_MAC, editText);
+	CString MAC, IP;
+	CDialog::GetDlgItemTextW(IDC_EDIT_MAC, MAC);
+	CDialog::GetDlgItemTextW(IDC_EDIT_IP, IP);
 	if (m_ComboAdapter.IsWindowEnabled()) {
-		if (editText != DEFAULT_EDIT_TEXT) {
+		if (MAC != DEFAULT_EDIT_TEXT && IP != DEFAULT_EDIT_TEXT) {
 			m_ComboAdapter.EnableWindow(FALSE);
+			m_Addr.EnableWindow(TRUE);
+			m_NILayer->Receiveflip();
+			m_ARPLayer->setmyAddr(MAC, IP);
 			CDialog::SetDlgItemTextW(IDSELECT, _T("ReSelect"));
+			SetTimer(1, 1000,NULL);
+			AfxBeginThread(m_NILayer->ThreadFunction_RECEIVE, m_NILayer);
 		}
 		else {
-			AfxMessageBox(_T("Need Selecting Adapter"));
+			AfxMessageBox(_T("Select other Adapter"));
 		}
 	}
 	else {
+		m_Addr.EnableWindow(FALSE);
 		m_ComboAdapter.EnableWindow(TRUE);
 		CDialog::SetDlgItemTextW(IDSELECT, _T("Select"));
+		KillTimer(1);
+		m_NILayer->Receiveflip();
+	}
+}
+
+
+void CARPDlg::SetTable()
+{
+	CRect rt;
+	m_ListARPTable.GetWindowRect(&rt);
+
+	m_ListARPTable.SetExtendedStyle(LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
+	m_ListARPTable.InsertColumn(1, _T("IP Address"), LVCFMT_CENTER, int(rt.Width() * 0.35));
+	m_ListARPTable.InsertColumn(2, _T("MAC Address"), LVCFMT_CENTER, int(rt.Width() * 0.4));
+	m_ListARPTable.InsertColumn(3, _T("Status"), LVCFMT_CENTER, int(rt.Width() * 0.25));
+}
+
+
+void CARPDlg::SetComboBox()
+{
+	m_NILayer->SetAdapterComboBox(m_ComboAdapter);
+}
+
+
+void CARPDlg::OnBnClickedSend()
+{
+	CARPLayer::IP_HEADER payload = {0,};
+	CString srcip;
+	CDialog::GetDlgItemTextW(IDC_EDIT_IP, srcip);
+	
+	if (m_Addr.IsWindowEnabled() && !m_ComboAdapter.IsWindowEnabled()) {
+		swscanf_s(srcip, _T("%3hhu.%3hhu.%3hhu.%3hhu"), &(payload.srcaddr[0]), &(payload.srcaddr[1]), &(payload.srcaddr[2]), &(payload.srcaddr[3]));
+		m_Addr.GetAddress(payload.dstaddr[0], payload.dstaddr[1], payload.dstaddr[2], payload.dstaddr[3]);
+		int check = 0;
+		for (int i = 0; i < IP_ADDR_SIZE; i++) {
+			check += payload.dstaddr[i];
+		}
+		if (check == 0 || check == 255 * 4) {
+			AfxMessageBox(_T("Fail : Invalid Address"));
+			return;
+		}
+		m_ARPLayer->Send((unsigned char*)&payload, 20);
+	}
+	else {
+		AfxMessageBox(_T("Fail : Set Adapter first"));
+		return;
+	}
+}
+
+
+void CARPDlg::updateTable()
+{
+	m_ARPLayer->updateTable();
+	std::vector<CARPLayer::ARP_NODE> table = m_ARPLayer->getTable();
+	CTime cur = CTime::GetCurrentTime();
+	
+	for (int i = 0; i < table.size();i++) {
+		CString dstip, dstmac;
+		addrToStr(ARP_IP_TYPE, dstip, table[i].protocol_addr);
+		addrToStr(ARP_ENET_TYPE, dstmac, table[i].hardware_addr);
+		LVFINDINFO l = { LVFI_STRING, dstip };
+		int fi = m_ListARPTable.FindItem(&l);
+		if (fi == -1) {
+			fi = m_ListARPTable.GetItemCount();
+			m_ListARPTable.InsertItem(fi, dstip);
+		}
+		m_ListARPTable.SetItemText(fi, 1, dstmac);
+		switch (table[i].status) {
+		case ARP_TIME_OUT:
+			m_ListARPTable.SetItemText(fi, 2, _T("Timeout"));
+			break;
+		case FALSE:
+			m_ListARPTable.SetItemText(fi, 2, _T("incomplete"));
+			break;
+		case TRUE:
+			m_ListARPTable.SetItemText(fi, 2, _T("Complete"));
+			break;
+		default:
+			break;
+		}
+		
 	}
 }

@@ -3,6 +3,9 @@
 #include "pch.h"
 #include <vector>
 
+void  addrToStr(unsigned short type, CString& dst, unsigned char* src);
+void  StrToaddr(unsigned short type, unsigned char* dst, CString& src);
+
 class CARPLayer :
     public CBaseLayer
 {
@@ -11,23 +14,24 @@ private:
 public:
     BOOL            Receive(unsigned char* ppayload);
     BOOL            Send(unsigned char* ppayload, int nlength);
-    BOOL            inCache(const unsigned char* ipaddr);
+    int             inCache(const unsigned char* ipaddr);
     void            setType(const unsigned short htype, const unsigned short ptype);
     void            setOpcode(const unsigned short opcode);
     void            setSrcAddr(const unsigned char enetAddr[], const unsigned char ipAddr[]);
     void            setDstAddr(const unsigned char enetAddr[], const unsigned char ipAddr[]);
     void            swapaddr(unsigned char lAddr[], unsigned char rAddr[], const unsigned char size);
-
+    void            updateTable();
+    void            setmyAddr(CString MAC, CString IP);
     CARPLayer(char* pName);
     virtual ~CARPLayer();
 
     typedef struct _ARP_NODE {
         unsigned char   protocol_addr[IP_ADDR_SIZE];
         unsigned char   hardware_addr[ENET_ADDR_SIZE];
-        bool            status;
+        unsigned char   status;
         CTime           spanTime;
-        struct _ARP_NODE(unsigned int ipaddr, unsigned int enetaddr, bool incomplete);
-        struct _ARP_NODE(unsigned char* cipaddr, unsigned char* cenetaddr, bool bincomplete);
+        struct _ARP_NODE(unsigned int ipaddr, unsigned int enetaddr, unsigned char incomplete);
+        struct _ARP_NODE(unsigned char* cipaddr, unsigned char* cenetaddr, unsigned char bincomplete);
         struct _ARP_NODE(const struct _ARP_NODE& ot);
 
         bool operator==(const unsigned char* ipaddr);
@@ -66,7 +70,12 @@ public:
         unsigned char   dstaddr[IP_ADDR_SIZE];
         unsigned char   data[ETHER_MAX_SIZE - ETHER_HEADER_SIZE - 20];
     }IP_HEADER, *PIP_HEADER;
+
+    std::vector<ARP_NODE> getTable();
+    
 protected:
+    unsigned char myip[IP_ADDR_SIZE];
+    unsigned char mymac[ENET_ADDR_SIZE];
     ARP_HEADER m_sHeader;
     std::vector<ARP_NODE> m_arpTable;
 };

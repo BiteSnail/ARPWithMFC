@@ -42,16 +42,21 @@ private:
 	CLayerManager	m_LayerMgr;
 public:
 	//Object
-	//CIPLayer*		m_IPLayer;
+	CIPLayer*		m_IPLayer;
 	CARPLayer*		m_ARPLayer;
 	CEthernetLayer*	m_EtherLayer;
 	CNILayer*		m_NILayer;
 
 	CListCtrl		m_ListARPTable;
 	CComboBox		m_ComboAdapter;
+	CIPAddressCtrl	m_Addr;
 public:
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnCbnSelchangeComboAdapter();
 	afx_msg void OnBnClickedSelect();
+	afx_msg void OnBnClickedSend();
 
+	void SetTable();
+	void SetComboBox();
+	void updateTable();
 };
