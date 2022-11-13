@@ -1,6 +1,7 @@
 #pragma once
 #include "BaseLayer.h"
 #include "pch.h"
+
 class IPLayer : public CBaseLayer{
 
 private:
@@ -19,11 +20,17 @@ public:
 	virtual ~IPLayer();
 
 	typedef struct _IP_HEADER {
-        //IP헤더 type 필요??
-		unsigned char	ip_dstaddr[6];
-		unsigned char	ip_srcaddr[6];
-		//unsigned short	type;
-		unsigned char	ip_data[ETHER_MAX_DATA_SIZE];
+		unsigned char	ip_dstaddr[4];
+		unsigned char	ip_srcaddr[4];
+		unsigned char	ip_data[IP_MAX_DATA_SIZE];
+        unsigned short  ip_ver = 4;
+        unsigned short  ip_hl = 5;
+        unsigned short  ip_tos = 0;
+        unsigned short  ip_tol = 0;
+        unsigned short  ip_fid = 0;
+        unsigned short  ip_ttl = 255;
+        unsigned short  ip_proto = 6;
+        unsigned short  ip_chksum = 0;
 
 	} IP_HEADER, *PIP_HEADER;
 

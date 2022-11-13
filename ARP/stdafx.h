@@ -29,6 +29,9 @@
 #define ETHER_HEADER_SIZE		14
 #define ETHER_MAX_DATA_SIZE		( ETHER_MAX_SIZE - ETHER_HEADER_SIZE )
 
+#define IP__MAX_SIZE            65515
+#define IP_HEADER_SIZE          20
+#define IP_MAX_DATA_SIZE        { IP_MAX_SIZE - IP_HEADER_SIZE }
 
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
 

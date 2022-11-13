@@ -3,8 +3,7 @@
 #include "stdafx.h"
 #include "IPLayer.h"
 
-#define IP__MAX_SIZE = null//??
-#define IP_HEADER_SIZE = null//??
+
 
 IPLayer::IPLayer(char* pName) : CBaseLayer(pName){
     ResetHeader();
@@ -15,9 +14,8 @@ IPLayer::~IPLayer(){
 
 void IPLayer::ResetHeader(){
     memset(m_sHeader.ip_data, 0, 6);
-    memset(m_sHeader.ip_dstaddr, 0, 6);
-    memset(m_sHeader.ip_src_addr, IP_MAX_DATA_SIZE, 6);//IP_MAX_DATA_SIZE = IP_MAX_SIZE - IP_HEADER_SIZE
-    //m_sHeader.ip_type = 0;
+    memset(m_sHeader.ip_dstaddr, 0, 4);
+    memset(m_sHeader.ip_src_addr, 0, 4);
 }
 
 unsigned char* IPLayer::GetSourceAddress(){
@@ -29,13 +27,13 @@ unsigned char* IPLayer::GetDestinAddress{
 }
 
 void IPLayer::SetSourceAddress(unsigned char* pAddress){
-    memcpy(m_sHeader.ip_srcaddr, pAddress, 6);
+    memcpy(m_sHeader.ip_srcaddr, pAddress, 4);
 }
 
 void IPLayer::SetDestinAddress(unsigned char* pAddress){
-    memcpy(m_sHeader.ip_dstaddr, pAddress, 6);
+    memcpy(m_sHeader.ip_dstaddr, pAddress, 4);
 }
-//UpperLayer = AppLayer, UnderLayer = ARPLayer -> GetUnderLayer함수로 작동?
+//UpperLayer = AppLayer, UnderLayer = ARPLayer?
 BOOL IPLayer::Send(unsigned char* ppayload, int nlength){
     memcpy(m_sHeader.ip_data, ppayload, nlength);
     BOOL bSuccess = FALSE;
