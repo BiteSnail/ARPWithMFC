@@ -40,6 +40,8 @@
 #define ARP_OPCODE_REPLY	2
 #define ARP_OPCODE_RREQUEST	3
 #define ARP_OPCODE_RREPLY	4
+#define IPV6_ADDR_LEN 16
+#define IPV6_ADDR_STR_LEN ((IPV6_ADDR_LEN*2)+7)
 
 
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
