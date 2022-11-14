@@ -29,6 +29,9 @@
 #define ETHER_HEADER_SIZE		14
 #define ETHER_MAX_DATA_SIZE		( ETHER_MAX_SIZE - ETHER_HEADER_SIZE )
 
+#define	ETHER_ARP_TYPE			0x0608
+#define ETHER_IP_TYPE			0x0008
+
 
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
 
