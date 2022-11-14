@@ -59,4 +59,6 @@ public:
 	void SetTable();
 	void SetComboBox();
 	void updateTable();
+	afx_msg void OnBnClickedButtonDelete();
+	afx_msg void OnBnClickedButtonReset();
 };

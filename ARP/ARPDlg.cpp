@@ -95,6 +95,8 @@ BEGIN_MESSAGE_MAP(CARPDlg, CDialogEx)
 	ON_CBN_SELCHANGE(IDC_COMBO_ADAPTER, &CARPDlg::OnCbnSelchangeComboAdapter)
 	ON_BN_CLICKED(IDSELECT, &CARPDlg::OnBnClickedSelect)
 	ON_BN_CLICKED(IDSEND, &CARPDlg::OnBnClickedSend)
+	ON_BN_CLICKED(IDC_BUTTON_DELETE, &CARPDlg::OnBnClickedButtonDelete)
+	ON_BN_CLICKED(IDC_BUTTON_RESET, &CARPDlg::OnBnClickedButtonReset)
 END_MESSAGE_MAP()
 
 
@@ -270,12 +272,17 @@ void CARPDlg::SetComboBox()
 void CARPDlg::OnBnClickedSend()
 {
 	CARPLayer::IP_HEADER payload = {0,};
-	CString srcip;
+	CString srcip, dstip;
 	CDialog::GetDlgItemTextW(IDC_EDIT_IP, srcip);
 	
 	if (m_Addr.IsWindowEnabled() && !m_ComboAdapter.IsWindowEnabled()) {
 		swscanf_s(srcip, _T("%3hhu.%3hhu.%3hhu.%3hhu"), &(payload.srcaddr[0]), &(payload.srcaddr[1]), &(payload.srcaddr[2]), &(payload.srcaddr[3]));
 		m_Addr.GetAddress(payload.dstaddr[0], payload.dstaddr[1], payload.dstaddr[2], payload.dstaddr[3]);
+		addrToStr(ARP_IP_TYPE, dstip, payload.dstaddr);
+		if (srcip == dstip) {
+			AfxMessageBox(_T("Fail : Invalid Address"));
+			return;
+		}
 		int check = 0;
 		for (int i = 0; i < IP_ADDR_SIZE; i++) {
 			check += payload.dstaddr[i];
@@ -325,4 +332,26 @@ void CARPDlg::updateTable()
 		}
 		
 	}
+}
+
+
+void CARPDlg::OnBnClickedButtonDelete()
+{
+	int sindex = m_ListARPTable.GetSelectionMark();
+
+	if (sindex < 0) {
+		AfxMessageBox(_T("Select Table first"));
+		return;
+	}
+	CString ip;
+	ip = m_ListARPTable.GetItemText(sindex, 0);
+	m_ARPLayer->deleteItem(ip);
+	m_ListARPTable.DeleteAllItems();
+}
+
+
+void CARPDlg::OnBnClickedButtonReset()
+{
+	m_ARPLayer->clearTable();
+	m_ListARPTable.DeleteAllItems();
 }

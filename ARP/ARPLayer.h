@@ -22,6 +22,8 @@ public:
     void            swapaddr(unsigned char lAddr[], unsigned char rAddr[], const unsigned char size);
     void            updateTable();
     void            setmyAddr(CString MAC, CString IP);
+    void            deleteItem(CString IP);
+    void            clearTable();
     CARPLayer(char* pName);
     virtual ~CARPLayer();
 

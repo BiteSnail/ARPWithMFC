@@ -253,6 +253,24 @@ void CARPLayer::updateTable() {
 	}
 }
 
+void CARPLayer::deleteItem(CString IP) {
+	auto k = m_arpTable.begin();
+	unsigned char addr[IP_ADDR_SIZE] = {0,};
+	StrToaddr(ARP_IP_TYPE, addr, IP);
+
+	for (; k != m_arpTable.end(); k++) {
+		if (*k == addr) {
+			break;
+		}
+	}
+
+	m_arpTable.erase(k);
+}
+
 std::vector<CARPLayer::ARP_NODE> CARPLayer::getTable() {
 	return m_arpTable;
+}
+
+void CARPLayer::clearTable() {
+	m_arpTable.clear();
 }
