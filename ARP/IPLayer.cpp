@@ -15,14 +15,14 @@ IPLayer::~IPLayer(){
 void IPLayer::ResetHeader(){
     memset(m_sHeader.ip_data, 0, 6);
     memset(m_sHeader.ip_dstaddr, 0, 4);
-    memset(m_sHeader.ip_src_addr, 0, 4);
+    memset(m_sHeader.ip_srcaddr, 0, 4);
 }
 
 unsigned char* IPLayer::GetSourceAddress(){
     return m_sHeader.ip_srcaddr;
 }
 
-unsigned char* IPLayer::GetDestinAddress{
+unsigned char* IPLayer::GetDestinAddress() {
     return m_sHeader.ip_dstaddr;
 }
 
@@ -43,10 +43,10 @@ BOOL IPLayer::Send(unsigned char* ppayload, int nlength){
 
 BOOL IPLayer::Receive(unsigned char* ppayload){
     BOOL bSuccess = FALSE;
-    IP_HEADER pFrame = (IP_HEADER)ppayload;
+    PIP_HEADER pFrame = (PIP_HEADER)ppayload;
 
     if(memcmp(pFrame->ip_dstaddr, m_sHeader.ip_srcaddr, sizeof(m_sHeader.ip_srcaddr)) == 0){
-        bSuccess = mp_aUpperLayer[0]->Receive(pFrame->ip_data)
+        bSuccess = mp_aUpperLayer[0]->Receive(pFrame->ip_data);
     }
 
     return bSuccess;

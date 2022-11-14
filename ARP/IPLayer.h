@@ -35,5 +35,5 @@ public:
 	} IP_HEADER, *PIP_HEADER;
 
 protected:
-    IP_HEADER m_sHeader
+    IP_HEADER m_sHeader;
 };
