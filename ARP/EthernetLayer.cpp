@@ -47,17 +47,17 @@ void CEthernetLayer::SetSourceAddress(unsigned char* pAddress)
 
 }
 
-//void CEthernetLayer::SetDestinAddress(unsigned char* pAddress)
-//{
-//	memcpy(m_sHeader.enet_dstaddr, pAddress, 6);
-//}
+void CEthernetLayer::SetDestinAddress(unsigned char* pAddress)
+{
+	memcpy(m_sHeader.enet_dstaddr, pAddress, 6);
+}
 
 BOOL CEthernetLayer::Send(unsigned char* ppayload, int nlength)
 {
 	// 윗 계층에서 받은 App 계층의 Frame 길이만큼을 Ethernet계층의 data로 넣는다.
 	memcpy(m_sHeader.enet_data, ppayload, nlength);
 	// 윗 계층에서 받은 type 또한 헤더에 포함시킨다.
-	memset(m_sHeader.enet_dstaddr, 255, 6);
+	//memset(m_sHeader.enet_dstaddr, 255, 6);
 	m_sHeader.enet_type = ETHER_ARP_TYPE;
 	BOOL bSuccess = FALSE;
 

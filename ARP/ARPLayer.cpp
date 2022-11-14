@@ -93,7 +93,7 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int nlength) {
 	setSrcAddr(m_ether->GetSourceAddress(), ip_data->srcaddr);
 	setDstAddr(broadcastAddr, ip_data->dstaddr);
 
-	return ((CEthernetLayer*)mp_UnderLayer)->Send((unsigned char*)&m_sHeader, ARP_HEADER_SIZE, ETHER_ARP_TYPE);
+	return ((CEthernetLayer*)mp_UnderLayer)->Send((unsigned char*)&m_sHeader, ARP_HEADER_SIZE);
 
 	return true;
 }
