@@ -29,6 +29,26 @@
 #define ETHER_HEADER_SIZE		14
 #define ETHER_MAX_DATA_SIZE		( ETHER_MAX_SIZE - ETHER_HEADER_SIZE )
 
+#define IP_MAX_SIZE            65515
+#define IP_HEADER_SIZE          20
+#define IP_MAX_DATA_SIZE        IP_MAX_SIZE - IP_HEADER_SIZE
+
+#define ARP_HEADER_SIZE			28
+#define ENET_ADDR_SIZE			6
+#define IP_ADDR_SIZE			4
+#define ARP_IP_TYPE				0x0008
+#define ARP_ENET_TYPE			0x0100
+
+#define ETHER_ARP_TYPE			0x0608
+
+
+#define ARP_TIME_OUT			2
+#define ARP_OPCODE_REQUEST		0x0100
+#define ARP_OPCODE_REPLY		0x0200
+#define ARP_OPCODE_RREQUEST		0x0300
+#define ARP_OPCODE_RREPLY		0x0400
+#define IPV6_ADDR_LEN			16
+#define IPV6_ADDR_STR_LEN		((IPV6_ADDR_LEN*2)+7)
 
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
 
