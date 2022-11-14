@@ -55,18 +55,18 @@ public:
 
 public:
 	void InitFn();
-	void AddArpCache(TCHAR* _ip, TCHAR* _Ethernet, TCHAR* _Status);
 	void AddProxyArpCache(TCHAR* _Device, TCHAR* _ip, TCHAR* _Ethernet);
 	void SetTable();
 	void SetComboBox();
 	void updateTable();
 
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnBnClickedButtonAdd();
 	afx_msg void OnBnClickedButtonDelete();
 	afx_msg void OnBnClickedButtonItemDel();
 	afx_msg void OnBnClickedButtonAllDel();
-	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnCbnSelchangeComboAdapter();
 	
 	afx_msg void OnBnClickedButtonSelect();
+	afx_msg void OnBnClickedButtonSendArp();
 };

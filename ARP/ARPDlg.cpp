@@ -105,6 +105,7 @@ BEGIN_MESSAGE_MAP(CARPDlg, CDialogEx)
 	ON_WM_TIMER()
 	ON_CBN_SELCHANGE(IDC_COMBO_ADAPTER, &CARPDlg::OnCbnSelchangeComboAdapter)
 	ON_BN_CLICKED(IDC_BUTTON_SELECT, &CARPDlg::OnBnClickedButtonSelect)
+	ON_BN_CLICKED(IDC_BUTTON_SEND_ARP, &CARPDlg::OnBnClickedButtonSendArp)
 END_MESSAGE_MAP()
 
 
@@ -242,22 +243,6 @@ void CARPDlg::InitFn()
 	mDeviceAddDlg.ShowWindow(SW_HIDE);
 }
 
-
-
-void CARPDlg::AddArpCache(TCHAR* _ip, TCHAR* _Ethernet, TCHAR* _Status)
-{
-	if (_ip == NULL) { return; }
-
-	int nListIndex = m_ListARPTable.GetItemCount();
-
-	m_ListARPTable.InsertItem(nListIndex, _ip);
-
-	m_ListARPTable.SetItemText(nListIndex, 1, _Ethernet);
-	m_ListARPTable.SetItemText(nListIndex, 2, _Status);
-	m_ListARPTable.SetColumnWidth(1, LVSCW_AUTOSIZE_USEHEADER);
-	m_ListARPTable.SendMessage(WM_VSCROLL, SB_BOTTOM);	// Scroll to bottom
-}
-
 void CARPDlg::AddProxyArpCache(TCHAR* _Device, TCHAR* _ip, TCHAR* _Ethernet)
 {
 	if (_ip == NULL) { return; }
@@ -275,7 +260,7 @@ void CARPDlg::AddProxyArpCache(TCHAR* _Device, TCHAR* _ip, TCHAR* _Ethernet)
 void CARPDlg::OnBnClickedButtonAdd()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	mDeviceAddDlg.InitDeviceAddDlg(0);
+	//mDeviceAddDlg.InitDeviceAddDlg(0);
 	mDeviceAddDlg.ShowWindow(SW_SHOW);
 }
 
@@ -291,30 +276,71 @@ void CARPDlg::OnBnClickedButtonDelete()
 
 void CARPDlg::OnBnClickedButtonItemDel()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	POSITION pos = m_ListARPTable.GetFirstSelectedItemPosition();
-	int nIndex = m_ListARPTable.GetNextSelectedItem(pos);
-	if (nIndex > -1)
-	{
-		m_ListARPTable.DeleteItem(nIndex);
+	int sindex = m_ListARPTable.GetSelectionMark();
+
+	if (sindex < 0) {
+		AfxMessageBox(_T("Select Table first"));
+		return;
 	}
+	CString ip;
+	ip = m_ListARPTable.GetItemText(sindex, 0);
+	m_ARPLayer->deleteItem(ip);
+	m_ListARPTable.DeleteAllItems();
 }
 
 
 void CARPDlg::OnBnClickedButtonAllDel()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	m_ARPLayer->clearTable();
 	m_ListARPTable.DeleteAllItems();
 }
 
 
 void CARPDlg::OnTimer(UINT_PTR nIDEvent)
 {
-	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
-
+	switch (nIDEvent) {
+	case 1:
+		updateTable();
+		break;
+	default:
+		break;
+	}
 	__super::OnTimer(nIDEvent);
 }
 
+void CARPDlg::updateTable()
+{
+	m_ARPLayer->updateTable();
+	std::vector<CARPLayer::ARP_NODE> table = m_ARPLayer->getTable();
+	CTime cur = CTime::GetCurrentTime();
+
+	for (int i = 0; i < table.size(); i++) {
+		CString dstip, dstmac;
+		addrToStr(ARP_IP_TYPE, dstip, table[i].protocol_addr);
+		addrToStr(ARP_ENET_TYPE, dstmac, table[i].hardware_addr);
+		LVFINDINFO l = { LVFI_STRING, dstip };
+		int fi = m_ListARPTable.FindItem(&l);
+		if (fi == -1) {
+			fi = m_ListARPTable.GetItemCount();
+			m_ListARPTable.InsertItem(fi, dstip);
+		}
+		m_ListARPTable.SetItemText(fi, 1, dstmac);
+		switch (table[i].status) {
+		case ARP_TIME_OUT:
+			m_ListARPTable.SetItemText(fi, 2, _T("Timeout"));
+			break;
+		case FALSE:
+			m_ListARPTable.SetItemText(fi, 2, _T("incomplete"));
+			break;
+		case TRUE:
+			m_ListARPTable.SetItemText(fi, 2, _T("Complete"));
+			break;
+		default:
+			break;
+		}
+
+	}
+}
 
 void CARPDlg::OnCbnSelchangeComboAdapter()
 {
@@ -342,6 +368,7 @@ void CARPDlg::OnBnClickedButtonSelect()
 	if (m_ComboxAdapter.IsWindowEnabled()) {
 		if (MAC != DEFAULT_EDIT_TEXT && IP != "0.0.0.0") {
 			m_ComboxAdapter.EnableWindow(FALSE);
+			m_SrcIPADDRESS.EnableWindow(FALSE);
 			m_DstIPADDRESS.EnableWindow(TRUE);
 			m_NILayer->Receiveflip();
 			m_ARPLayer->setmyAddr(MAC, IP);
@@ -355,9 +382,40 @@ void CARPDlg::OnBnClickedButtonSelect()
 	}
 	else {
 		m_DstIPADDRESS.EnableWindow(FALSE);
+		m_SrcIPADDRESS.EnableWindow(TRUE);
 		m_ComboxAdapter.EnableWindow(TRUE);
 		CDialog::SetDlgItemTextW(IDC_BUTTON_SELECT, _T("Select"));
 		KillTimer(1);
 		m_NILayer->Receiveflip();
 	}
 }
+
+void CARPDlg::OnBnClickedButtonSendArp()
+{
+	unsigned char srcip[IP_ADDR_SIZE] = {0,}, dstip[IP_ADDR_SIZE] = {0,};
+	m_SrcIPADDRESS.GetAddress(srcip[0], srcip[1], srcip[2], srcip[3]);
+	m_DstIPADDRESS.GetAddress(dstip[0], dstip[1], dstip[2], dstip[3]);
+
+	if (m_DstIPADDRESS.IsWindowEnabled() && !m_ComboxAdapter.IsWindowEnabled()) {
+		m_IPLayer->SetSourceAddress(srcip);
+		m_IPLayer->SetDestinAddress(dstip);
+		if (memcmp(srcip, dstip, IP_ADDR_SIZE)==0) {
+			AfxMessageBox(_T("Fail : Invalid Address"));
+			return;
+		}
+		int check = 0;
+		for (int i = 0; i < IP_ADDR_SIZE; i++) {
+			check += dstip[i];
+		}
+		if (check == 0 || check == 255 * 4) {
+			AfxMessageBox(_T("Fail : Invalid Address"));
+			return;
+		}
+		mp_UnderLayer->Send((unsigned char*)"dummy Data", 11);
+	}
+	else {
+		AfxMessageBox(_T("Fail : Set Adapter first"));
+		return;
+	}
+}
+

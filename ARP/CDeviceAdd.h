@@ -40,4 +40,5 @@ public:
 	afx_msg void OnBnClickedOk();
 	afx_msg void OnBnClickedCancel();
 	afx_msg void OnCbnCloseupComboDeviceList();
+	afx_msg void OnCbnSelchangeComboDeviceList();
 };

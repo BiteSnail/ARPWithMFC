@@ -22,6 +22,7 @@
 #define IDC_EDIT_MACADDR                1006
 #define IDC_BUTTON_SEND2                1007
 #define IDC_EDIT_DEVICE_ETHERNET_ADDRESS 1007
+#define IDC_BUTTON_SEND_ARP             1007
 #define IDC_LIST_CONTROL_PROXY          1008
 #define IDC_LIST_CONTROL2               1008
 #define IDC_COMBO_DEVICE_LIST           1008
