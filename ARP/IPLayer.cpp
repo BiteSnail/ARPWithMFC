@@ -7,15 +7,25 @@
 
 IPLayer::IPLayer(char* pName) : CBaseLayer(pName){
     ResetHeader();
+    m_sHeader.ver_hlegnth = 0x45;
+    m_sHeader.tos = 0x00;
+    m_sHeader.tlength = 0xffff;
+
+    m_sHeader.id = 0x0000;
+    m_sHeader.offset = 0x00;
+
+    m_sHeader.ttl = 0xff;
+    m_sHeader.ptype = 0x06;
+    m_sHeader.checksum = 0x0000;
 }
 
 IPLayer::~IPLayer(){
 }
 
 void IPLayer::ResetHeader(){
-    memset(m_sHeader.ip_data, 0, 6);
-    memset(m_sHeader.ip_dstaddr, 0, 4);
-    memset(m_sHeader.ip_srcaddr, 0, 4);
+    memset(m_sHeader.ip_srcaddr, 0, IP_ADDR_SIZE);
+    memset(m_sHeader.ip_dstaddr, 0, IP_ADDR_SIZE);
+    memset(m_sHeader.ip_data, 0, IP_MAX_DATA_SIZE);
 }
 
 unsigned char* IPLayer::GetSourceAddress(){
@@ -27,11 +37,11 @@ unsigned char* IPLayer::GetDestinAddress() {
 }
 
 void IPLayer::SetSourceAddress(unsigned char* pAddress){
-    memcpy(m_sHeader.ip_srcaddr, pAddress, 4);
+    memcpy(m_sHeader.ip_srcaddr, pAddress, IP_ADDR_SIZE);
 }
 
 void IPLayer::SetDestinAddress(unsigned char* pAddress){
-    memcpy(m_sHeader.ip_dstaddr, pAddress, 4);
+    memcpy(m_sHeader.ip_dstaddr, pAddress, IP_ADDR_SIZE);
 }
 //UpperLayer = AppLayer, UnderLayer = ARPLayer?
 BOOL IPLayer::Send(unsigned char* ppayload, int nlength){

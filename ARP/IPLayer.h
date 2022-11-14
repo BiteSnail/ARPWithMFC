@@ -19,20 +19,23 @@ public:
     IPLayer(char* pName);
 	virtual ~IPLayer();
 
-	typedef struct _IP_HEADER {
-		unsigned char	ip_dstaddr[4];
-		unsigned char	ip_srcaddr[4];
-		unsigned char	ip_data[IP_MAX_DATA_SIZE];
-        unsigned short  ip_ver = 4;
-        unsigned short  ip_hl = 5;
-        unsigned short  ip_tos = 0;
-        unsigned short  ip_tol = 0;
-        unsigned short  ip_fid = 0;
-        unsigned short  ip_ttl = 255;
-        unsigned short  ip_proto = 6;
-        unsigned short  ip_chksum = 0;
+    typedef struct _IP_HEADER {
+        unsigned char   ver_hlegnth; // 4-bit IPv4 version, 4-bit header length
+        unsigned char   tos;         // IP type of service
+        unsigned short  tlength;     // Total length
 
-	} IP_HEADER, *PIP_HEADER;
+        unsigned short  id;          // Unique identifier
+        unsigned char   offset;      // Fragment offset field
+        
+        unsigned char   ttl;         // Time to live
+        unsigned char   ptype;       // Protocol type
+        unsigned short  checksum;    // IP checksum
+        
+        unsigned char   ip_srcaddr[IP_ADDR_SIZE];
+        unsigned char   ip_dstaddr[IP_ADDR_SIZE];
+        unsigned char   ip_data[IP_MAX_DATA_SIZE];
+
+    } IP_HEADER, * PIP_HEADER;
 
 protected:
     IP_HEADER m_sHeader;
