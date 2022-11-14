@@ -84,9 +84,9 @@ BOOL CEthernetLayer::Receive(unsigned char* ppayload)
 	//////////////////////// fill the blank ///////////////////////////////
 	if(memcmp(pFrame->enet_dstaddr, m_sHeader.enet_srcaddr, sizeof(m_sHeader.enet_srcaddr))==0){//주소 확인
 			// enet_type을 기준으로 Ethernet Frame의 data를 넘겨줄 레이어를 지정한다.
-		if (pFrame->enet_type == 0x2080)
+		if (pFrame->enet_type == 0x0800)
 			bSuccess = mp_aUpperLayer[0]->Receive(pFrame->enet_data);//mp_aUpperLayer[0] == ChatApp
-		else if(pFrame->enet_type == 0x2090)
+		else if(pFrame->enet_type == 0x0806)
 			bSuccess = mp_aUpperLayer[1]->Receive(pFrame->enet_data);//mp_aUpperLayer[1] == FileApp
 	}
 	///////////////////////////////////////////////////////////////////////
