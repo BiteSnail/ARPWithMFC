@@ -188,10 +188,10 @@ HCURSOR CARPDlg::OnQueryDragIcon()
 
 void CARPDlg::InitFn()
 {
-	m_IPADDRESS.SetWindowTextA(_T("0.0.0.0"));
-	m_IPADDRESS2.SetWindowTextA(_T("0.0.0.0"));
-	m_editHWAddr.SetWindowTextA(_T("00:00:00:00:00:00"));
-	m_edit1.SetWindowTextA(_T("00:00:00:00:00:00"));
+	m_IPADDRESS.SetWindowTextW(_T("0.0.0.0"));
+	m_IPADDRESS2.SetWindowTextW(_T("0.0.0.0"));
+	m_editHWAddr.SetWindowTextW(_T("00:00:00:00:00:00"));
+	m_edit1.SetWindowTextW(_T("00:00:00:00:00:00"));
 	//--------------------------------------------------------------------------------------
 	// 
 	//

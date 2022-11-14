@@ -61,7 +61,7 @@ void CDeviceAdd::SetAdapterList()
 {
 	CStringArray aList;
 	m_DeviceList.ResetContent();
-	m_IPADDRESS_DEVICE_ADD.SetWindowTextA(_T("0.0.0.0"));
+	m_IPADDRESS_DEVICE_ADD.SetWindowTextW(_T("0.0.0.0"));
 	theApp.MainDlg->m_Network->GetMacAddressList(aList);
 	for (int i = 0; i < aList.GetSize(); i++) 
 	{
@@ -71,7 +71,7 @@ void CDeviceAdd::SetAdapterList()
 	memcpy(m_ucSrcAddr, theApp.MainDlg->m_Network->SetAdapter(m_DeviceList.GetCurSel()), 6);
 
 	UctoS(m_ucSrcAddr, m_unSrcAddr);
-	m_editDeviceEthernetAddr.SetWindowTextA(m_unSrcAddr);
+	m_editDeviceEthernetAddr.SetWindowTextW(m_unSrcAddr);
 }
 
 void CDeviceAdd::UctoS(UCHAR* src, CString& dst)
@@ -94,7 +94,7 @@ void CDeviceAdd::OnBnClickedOk()
 	m_IPADDRESS_DEVICE_ADD.GetAddress(_a1, _a2, _a3, _a4);
 	_stprintf_s(tszIP, MAX_PATH, _T("%d.%d.%d.%d"), _a1, _a2, _a3, _a4);
 	//ETHERNET
-	m_editDeviceEthernetAddr.GetWindowTextA(mAddr);
+	m_editDeviceEthernetAddr.GetWindowTextW(mAddr);
 	//
 	theApp.MainDlg->AddProxyArpCache((TCHAR*)(LPCTSTR)mDeviceName, tszIP, (TCHAR*)(LPCTSTR)mAddr);
 	
@@ -116,5 +116,5 @@ void CDeviceAdd::OnCbnCloseupComboDeviceList()
 	memcpy(m_ucSrcAddr, theApp.MainDlg->m_Network->SetAdapter(nIndex), 6);
 
 	UctoS(m_ucSrcAddr, m_unSrcAddr);
-	m_editDeviceEthernetAddr.SetWindowTextA(m_unSrcAddr);
+	m_editDeviceEthernetAddr.SetWindowTextW(m_unSrcAddr);
 }
