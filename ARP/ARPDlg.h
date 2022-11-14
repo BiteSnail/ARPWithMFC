@@ -48,9 +48,9 @@ public:
 	CIPAddressCtrl	m_SrcIPADDRESS;
 	CIPAddressCtrl	m_DstIPADDRESS;
 
+	CComboBox		m_ComboxAdapter;
 	CEdit			m_editHWAddr;
-	CEdit			m_edit1;
-	CComboBox		m_Combox1;
+	CEdit			m_editSrcHwAddr;
 	CDeviceAdd		mDeviceAddDlg;
 
 public:
@@ -66,4 +66,6 @@ public:
 	afx_msg void OnBnClickedButtonItemDel();
 	afx_msg void OnBnClickedButtonAllDel();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnCbnSelchangeComboAdapter();
+	
 };

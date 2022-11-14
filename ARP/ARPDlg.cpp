@@ -87,13 +87,11 @@ void CARPDlg::DoDataExchange(CDataExchange* pDX)
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_LIST_CONTROL, m_ListARPTable);
 	DDX_Control(pDX, IDC_LIST_CONTROL_PROXY, m_ctrlListControlProxy);
-	DDX_Control(pDX, IDC_IPADDRESS, m_SrcIPADDRESS);
-	DDX_Control(pDX, IDC_IPADDRESS2, m_DstIPADDRESS);		//<-용도가 정확치 않아 변수명을 이렇게 정했습니다.
+	DDX_Control(pDX, IDC_IPADDRESS_SRC, m_SrcIPADDRESS);
+	DDX_Control(pDX, IDC_IPADDRESS_DST, m_DstIPADDRESS);
 	DDX_Control(pDX, IDC_EDIT_HW_ADDR, m_editHWAddr);
-	DDX_Control(pDX, IDC_EDIT_1, m_edit1);				//<-용도가 정확치 않아 변수명을 이렇게 정했습니다.
-	DDX_Control(pDX, IDC_COMBO1, m_Combox1);		//파워포인트에서 VMware 적힌 부분입니다.
-	
-	
+	DDX_Control(pDX, IDC_EDIT_MACADDR, m_editSrcHwAddr);
+	DDX_Control(pDX, IDC_COMBO_ADAPTER, m_ComboxAdapter);
 }
 
 BEGIN_MESSAGE_MAP(CARPDlg, CDialogEx)
@@ -105,6 +103,7 @@ BEGIN_MESSAGE_MAP(CARPDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_ITEM_DEL, &CARPDlg::OnBnClickedButtonItemDel)
 	ON_BN_CLICKED(IDC_BUTTON_ALL_DEL, &CARPDlg::OnBnClickedButtonAllDel)
 	ON_WM_TIMER()
+	ON_CBN_SELCHANGE(IDC_COMBO_ADAPTER, &CARPDlg::OnCbnSelchangeComboAdapter)
 END_MESSAGE_MAP()
 
 
@@ -141,8 +140,11 @@ BOOL CARPDlg::OnInitDialog()
 
 	theApp.MainDlg = (CARPDlg*)AfxGetApp()->m_pMainWnd;
 
+
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
-	InitFn();
+	//InitFn();
+	SetTable();
+	SetComboBox();
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
 
@@ -195,7 +197,21 @@ HCURSOR CARPDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+void CARPDlg::SetTable()
+{
+	CRect rt;
+	m_ListARPTable.GetWindowRect(&rt);
 
+	m_ListARPTable.SetExtendedStyle(LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
+	m_ListARPTable.InsertColumn(1, _T("IP Address"), LVCFMT_CENTER, int(rt.Width() * 0.35));
+	m_ListARPTable.InsertColumn(2, _T("MAC Address"), LVCFMT_CENTER, int(rt.Width() * 0.4));
+	m_ListARPTable.InsertColumn(3, _T("Status"), LVCFMT_CENTER, int(rt.Width() * 0.25));
+}
+
+void CARPDlg::SetComboBox()
+{
+	m_NILayer->SetAdapterComboBox(m_ComboxAdapter);
+}
 
 
 void CARPDlg::InitFn()
@@ -203,7 +219,7 @@ void CARPDlg::InitFn()
 	m_SrcIPADDRESS.SetWindowTextW(_T("0.0.0.0"));
 	m_DstIPADDRESS.SetWindowTextW(_T("0.0.0.0"));
 	m_editHWAddr.SetWindowTextW(_T("00:00:00:00:00:00"));
-	m_edit1.SetWindowTextW(_T("00:00:00:00:00:00"));
+	m_editSrcHwAddr.SetWindowTextW(_T("00:00:00:00:00:00"));
 	//--------------------------------------------------------------------------------------
 	// 
 	//
@@ -241,8 +257,8 @@ void CARPDlg::InitFn()
 	//
 	// 
 	//--------------------------------------------------------------------------------------
-	m_Combox1.AddString(_T("VMware Virtual Ethernet Adapter"));
-	m_Combox1.SetCurSel(0);
+	m_ComboxAdapter.AddString(_T("VMware Virtual Ethernet Adapter"));
+	m_ComboxAdapter.SetCurSel(0);
 	
 	//--------------------------------------------------------------------------------------
 	// 
@@ -338,4 +354,21 @@ void CARPDlg::OnTimer(UINT_PTR nIDEvent)
 	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
 
 	__super::OnTimer(nIDEvent);
+}
+
+
+void CARPDlg::OnCbnSelchangeComboAdapter()
+{
+	CString MAC, IPV4, IPV6;
+	unsigned char* macaddr = m_NILayer->SetAdapter(m_ComboxAdapter.GetCurSel());
+	if (macaddr == nullptr) {
+		MAC = DEFAULT_EDIT_TEXT;
+	}
+	else {
+		MAC.Format(_T("%hhx:%hhx:%hhx:%hhx:%hhx:%hhx"), macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5]);
+		m_EtherLayer->SetSourceAddress(macaddr);
+		m_NILayer->GetIPAddress(IPV4, IPV6);
+	}
+	m_editSrcHwAddr.SetWindowTextW(MAC);
+	m_SrcIPADDRESS.SetWindowTextW(IPV4);
 }
