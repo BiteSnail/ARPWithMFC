@@ -104,6 +104,7 @@ BEGIN_MESSAGE_MAP(CARPDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_ALL_DEL, &CARPDlg::OnBnClickedButtonAllDel)
 	ON_WM_TIMER()
 	ON_CBN_SELCHANGE(IDC_COMBO_ADAPTER, &CARPDlg::OnCbnSelchangeComboAdapter)
+	ON_BN_CLICKED(IDC_BUTTON_SELECT, &CARPDlg::OnBnClickedButtonSelect)
 END_MESSAGE_MAP()
 
 
@@ -142,7 +143,7 @@ BOOL CARPDlg::OnInitDialog()
 
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
-	//InitFn();
+	InitFn();
 	SetTable();
 	SetComboBox();
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
@@ -216,25 +217,6 @@ void CARPDlg::SetComboBox()
 
 void CARPDlg::InitFn()
 {
-	m_SrcIPADDRESS.SetWindowTextW(_T("0.0.0.0"));
-	m_DstIPADDRESS.SetWindowTextW(_T("0.0.0.0"));
-	m_editHWAddr.SetWindowTextW(_T("00:00:00:00:00:00"));
-	m_editSrcHwAddr.SetWindowTextW(_T("00:00:00:00:00:00"));
-	//--------------------------------------------------------------------------------------
-	// 
-	//
-	//ARP Cache Set
-	//
-	// 
-	//--------------------------------------------------------------------------------------
-	m_ListARPTable.SetExtendedStyle(LVS_EX_FULLROWSELECT);
-	m_ListARPTable.InsertColumn(0, _T("IP Address"));
-	m_ListARPTable.SetColumnWidth(0, 120);
-	m_ListARPTable.InsertColumn(1, _T("Ethernet Address"));
-	m_ListARPTable.SetColumnWidth(1, 140);
-	m_ListARPTable.InsertColumn(2, _T("Status"));
-	m_ListARPTable.SetColumnWidth(2, 90);
-
 	//--------------------------------------------------------------------------------------
 	// 
 	//
@@ -249,17 +231,6 @@ void CARPDlg::InitFn()
 	m_ctrlListControlProxy.SetColumnWidth(1, 120);
 	m_ctrlListControlProxy.InsertColumn(2, _T("Ethernet Address"));
 	m_ctrlListControlProxy.SetColumnWidth(2, 140);
-	
-	//--------------------------------------------------------------------------------------
-	// 
-	//
-	//
-	//
-	// 
-	//--------------------------------------------------------------------------------------
-	m_ComboxAdapter.AddString(_T("VMware Virtual Ethernet Adapter"));
-	m_ComboxAdapter.SetCurSel(0);
-	
 	//--------------------------------------------------------------------------------------
 	// 
 	//
@@ -269,18 +240,6 @@ void CARPDlg::InitFn()
 	//--------------------------------------------------------------------------------------
 	mDeviceAddDlg.Create(IDD_DIALOG_DEVICE_ADD, this);
 	mDeviceAddDlg.ShowWindow(SW_HIDE);
-	//
-	//
-	// //--------------------------------------------------------------------------------------
-	// 
-	//
-	//테스트용으로 넣은겁니다 지우셔도됩니다.
-	//
-	// 
-	AddArpCache(_T("192.168.011.111"), _T("00:00:00:00:00:00"), _T("InComplete"));
-	AddArpCache(_T("192.168.011.222"), _T("01:00:00:00:00:00"), _T("InComplete"));
-	AddArpCache(_T("192.168.011.333"), _T("02:00:00:00:00:00"), _T("InComplete"));
-	//--------------------------------------------------------------------------------------
 }
 
 
@@ -371,4 +330,34 @@ void CARPDlg::OnCbnSelchangeComboAdapter()
 	}
 	m_editSrcHwAddr.SetWindowTextW(MAC);
 	m_SrcIPADDRESS.SetWindowTextW(IPV4);
+}
+
+
+void CARPDlg::OnBnClickedButtonSelect()
+{
+	CString MAC, IP;
+	m_editSrcHwAddr.GetWindowTextW(MAC);
+	m_SrcIPADDRESS.GetWindowTextW(IP);
+	
+	if (m_ComboxAdapter.IsWindowEnabled()) {
+		if (MAC != DEFAULT_EDIT_TEXT && IP != "0.0.0.0") {
+			m_ComboxAdapter.EnableWindow(FALSE);
+			m_DstIPADDRESS.EnableWindow(TRUE);
+			m_NILayer->Receiveflip();
+			m_ARPLayer->setmyAddr(MAC, IP);
+			CDialog::SetDlgItemTextW(IDC_BUTTON_SELECT, _T("ReSelect"));
+			SetTimer(1, 1000, NULL);
+			AfxBeginThread(m_NILayer->ThreadFunction_RECEIVE, m_NILayer);
+		}
+		else {
+			AfxMessageBox(_T("Select other Adapter"));
+		}
+	}
+	else {
+		m_DstIPADDRESS.EnableWindow(FALSE);
+		m_ComboxAdapter.EnableWindow(TRUE);
+		CDialog::SetDlgItemTextW(IDC_BUTTON_SELECT, _T("Select"));
+		KillTimer(1);
+		m_NILayer->Receiveflip();
+	}
 }

@@ -68,4 +68,5 @@ public:
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnCbnSelchangeComboAdapter();
 	
+	afx_msg void OnBnClickedButtonSelect();
 };
