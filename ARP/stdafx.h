@@ -46,6 +46,8 @@
 #define IPV6_ADDR_LEN		16
 #define IPV6_ADDR_STR_LEN	((IPV6_ADDR_LEN*2)+7)
 
+#define DEFAULT_EDIT_TEXT	"-"
+
 
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
 
