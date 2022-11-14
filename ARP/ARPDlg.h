@@ -34,25 +34,39 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 
+private:
+	CLayerManager	m_LayerMgr;
+public:
+	CIPLayer*		m_IPLayer;
+	CARPLayer*		m_ARPLayer;
+	CEthernetLayer*	m_EtherLayer;
+	CNILayer*		m_NILayer;
+	CNILayer*		m_Network;
+
+	CListCtrl		m_ListARPTable;
+	CListCtrl		m_ctrlListControlProxy;
+	CIPAddressCtrl	m_SrcIPADDRESS;
+	CIPAddressCtrl	m_DstIPADDRESS;
+
+	CComboBox		m_ComboxAdapter;
+	CEdit			m_editHWAddr;
+	CEdit			m_editSrcHwAddr;
+	CDeviceAdd		mDeviceAddDlg;
 
 public:
 	void InitFn();
-	void AddArpCache(TCHAR* _ip, TCHAR* _Ethernet, TCHAR* _Status);
 	void AddProxyArpCache(TCHAR* _Device, TCHAR* _ip, TCHAR* _Ethernet);
-public:
-	CLayerManager	m_LayerMgr;
-	CNILayer* m_Network;
-	CListCtrl m_ctrlListControl;
-	CListCtrl m_ctrlListControlProxy;
-	CIPAddressCtrl m_IPADDRESS;
-	CIPAddressCtrl m_IPADDRESS2;
-	
-	CEdit m_editHWAddr;
-	CEdit m_edit1;
-	CComboBox m_Combox1;
-	CDeviceAdd mDeviceAddDlg;
+	void SetTable();
+	void SetComboBox();
+	void updateTable();
+
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnBnClickedButtonAdd();
 	afx_msg void OnBnClickedButtonDelete();
 	afx_msg void OnBnClickedButtonItemDel();
 	afx_msg void OnBnClickedButtonAllDel();
+	afx_msg void OnCbnSelchangeComboAdapter();
+	
+	afx_msg void OnBnClickedButtonSelect();
+	afx_msg void OnBnClickedButtonSendArp();
 };

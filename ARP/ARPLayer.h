@@ -63,11 +63,14 @@ public:
         unsigned char   ver_hlegnth;
         unsigned char   tos;
         unsigned short  tlength;
+
         unsigned short  id;
         unsigned char   offset;
+
         unsigned char   ttl;
         unsigned char   ptype;
         unsigned short  checksum;
+
         unsigned char   srcaddr[IP_ADDR_SIZE];
         unsigned char   dstaddr[IP_ADDR_SIZE];
         unsigned char   data[ETHER_MAX_SIZE - ETHER_HEADER_SIZE - 20];
