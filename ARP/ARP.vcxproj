@@ -193,6 +193,7 @@
     <ClInclude Include="ARPDlg.h" />
     <ClInclude Include="ARPLayer.h" />
     <ClInclude Include="BaseLayer.h" />
+    <ClInclude Include="CDeviceAdd.h" />
     <ClInclude Include="EthernetLayer.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="IPLayer.h" />
@@ -208,6 +209,7 @@
     <ClCompile Include="ARPDlg.cpp" />
     <ClCompile Include="ARPLayer.cpp" />
     <ClCompile Include="BaseLayer.cpp" />
+    <ClCompile Include="CDeviceAdd.cpp" />
     <ClCompile Include="EthernetLayer.cpp" />
     <ClCompile Include="IPLayer.cpp" />
     <ClCompile Include="LayerManager.cpp" />

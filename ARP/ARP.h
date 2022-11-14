@@ -9,7 +9,7 @@
 #endif
 
 #include "resource.h"		// 주 기호입니다.
-
+#include "ARPDlg.h"
 
 // CARPApp:
 // 이 클래스의 구현에 대해서는 ARP.cpp을(를) 참조하세요.
@@ -24,6 +24,7 @@ public:
 public:
 	virtual BOOL InitInstance();
 
+	CARPDlg* MainDlg;
 // 구현입니다.
 
 	DECLARE_MESSAGE_MAP()
