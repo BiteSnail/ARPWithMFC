@@ -54,30 +54,41 @@ END_MESSAGE_MAP()
 
 CARPDlg::CARPDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_ARP_DIALOG, pParent)
-	, CBaseLayer("ChatDlg") //
+	, CBaseLayer("Dlg")
+	, m_ARPLayer(nullptr)
+	, m_EtherLayer(nullptr)
+	, m_NILayer(nullptr)
+	, m_IPLayer(nullptr)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
 	//Protocol Layer Setting
-	//m_LayerMgr.AddLayer(new CChatAppLayer("ChatApp"));
-	m_LayerMgr.AddLayer(new CEthernetLayer("Ethernet"));
-	//m_LayerMgr.AddLayer(new FileTransLayer("FileTrans"));
-	m_LayerMgr.AddLayer(new CNILayer("Network"));
+	m_ARPLayer = new CARPLayer("ARP");
+	m_IPLayer = new CIPLayer("Network");
+	m_EtherLayer = new CEthernetLayer("Ethernet");
+	m_NILayer = new CNILayer("NI");
+
+	if (m_ARPLayer == nullptr || m_IPLayer == nullptr || m_EtherLayer == nullptr || m_NILayer == nullptr) {
+		AfxMessageBox(_T("Fail : Layer Link"));
+		return;
+	}
+
+	m_LayerMgr.AddLayer(m_ARPLayer);
+	m_LayerMgr.AddLayer(m_IPLayer);
+	m_LayerMgr.AddLayer(m_EtherLayer);
+	m_LayerMgr.AddLayer(m_NILayer);
 	m_LayerMgr.AddLayer(this);
 
-	// 레이어를 연결한다. (레이어 생성)
-	m_LayerMgr.ConnectLayers("Network ( *Ethernet ( *ChatApp ( *ChatDlg ) *FileTrans ( *ChatDlg ) ) )");
-
-	m_Network = (CNILayer*)m_LayerMgr.GetLayer("Network");
+	m_LayerMgr.ConnectLayers("NI ( *Ethernet ( *Network ( *Dlg  -ARP ) *ARP ) )");
 }
 
 void CARPDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_LIST_CONTROL, m_ctrlListControl);
+	DDX_Control(pDX, IDC_LIST_CONTROL, m_ListARPTable);
 	DDX_Control(pDX, IDC_LIST_CONTROL_PROXY, m_ctrlListControlProxy);
-	DDX_Control(pDX, IDC_IPADDRESS, m_IPADDRESS);
-	DDX_Control(pDX, IDC_IPADDRESS2, m_IPADDRESS2);		//<-용도가 정확치 않아 변수명을 이렇게 정했습니다.
+	DDX_Control(pDX, IDC_IPADDRESS, m_SrcIPADDRESS);
+	DDX_Control(pDX, IDC_IPADDRESS2, m_DstIPADDRESS);		//<-용도가 정확치 않아 변수명을 이렇게 정했습니다.
 	DDX_Control(pDX, IDC_EDIT_HW_ADDR, m_editHWAddr);
 	DDX_Control(pDX, IDC_EDIT_1, m_edit1);				//<-용도가 정확치 않아 변수명을 이렇게 정했습니다.
 	DDX_Control(pDX, IDC_COMBO1, m_Combox1);		//파워포인트에서 VMware 적힌 부분입니다.
@@ -93,6 +104,7 @@ BEGIN_MESSAGE_MAP(CARPDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_DELETE, &CARPDlg::OnBnClickedButtonDelete)
 	ON_BN_CLICKED(IDC_BUTTON_ITEM_DEL, &CARPDlg::OnBnClickedButtonItemDel)
 	ON_BN_CLICKED(IDC_BUTTON_ALL_DEL, &CARPDlg::OnBnClickedButtonAllDel)
+	ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 
@@ -188,8 +200,8 @@ HCURSOR CARPDlg::OnQueryDragIcon()
 
 void CARPDlg::InitFn()
 {
-	m_IPADDRESS.SetWindowTextW(_T("0.0.0.0"));
-	m_IPADDRESS2.SetWindowTextW(_T("0.0.0.0"));
+	m_SrcIPADDRESS.SetWindowTextW(_T("0.0.0.0"));
+	m_DstIPADDRESS.SetWindowTextW(_T("0.0.0.0"));
 	m_editHWAddr.SetWindowTextW(_T("00:00:00:00:00:00"));
 	m_edit1.SetWindowTextW(_T("00:00:00:00:00:00"));
 	//--------------------------------------------------------------------------------------
@@ -199,13 +211,13 @@ void CARPDlg::InitFn()
 	//
 	// 
 	//--------------------------------------------------------------------------------------
-	m_ctrlListControl.SetExtendedStyle(LVS_EX_FULLROWSELECT);
-	m_ctrlListControl.InsertColumn(0, _T("IP Address"));
-	m_ctrlListControl.SetColumnWidth(0, 120);
-	m_ctrlListControl.InsertColumn(1, _T("Ethernet Address"));
-	m_ctrlListControl.SetColumnWidth(1, 140);
-	m_ctrlListControl.InsertColumn(2, _T("Status"));
-	m_ctrlListControl.SetColumnWidth(2, 90);
+	m_ListARPTable.SetExtendedStyle(LVS_EX_FULLROWSELECT);
+	m_ListARPTable.InsertColumn(0, _T("IP Address"));
+	m_ListARPTable.SetColumnWidth(0, 120);
+	m_ListARPTable.InsertColumn(1, _T("Ethernet Address"));
+	m_ListARPTable.SetColumnWidth(1, 140);
+	m_ListARPTable.InsertColumn(2, _T("Status"));
+	m_ListARPTable.SetColumnWidth(2, 90);
 
 	//--------------------------------------------------------------------------------------
 	// 
@@ -261,14 +273,14 @@ void CARPDlg::AddArpCache(TCHAR* _ip, TCHAR* _Ethernet, TCHAR* _Status)
 {
 	if (_ip == NULL) { return; }
 
-	int nListIndex = m_ctrlListControl.GetItemCount();
+	int nListIndex = m_ListARPTable.GetItemCount();
 
-	m_ctrlListControl.InsertItem(nListIndex, _ip);
+	m_ListARPTable.InsertItem(nListIndex, _ip);
 
-	m_ctrlListControl.SetItemText(nListIndex, 1, _Ethernet);
-	m_ctrlListControl.SetItemText(nListIndex, 2, _Status);
-	m_ctrlListControl.SetColumnWidth(1, LVSCW_AUTOSIZE_USEHEADER);
-	m_ctrlListControl.SendMessage(WM_VSCROLL, SB_BOTTOM);	// Scroll to bottom
+	m_ListARPTable.SetItemText(nListIndex, 1, _Ethernet);
+	m_ListARPTable.SetItemText(nListIndex, 2, _Status);
+	m_ListARPTable.SetColumnWidth(1, LVSCW_AUTOSIZE_USEHEADER);
+	m_ListARPTable.SendMessage(WM_VSCROLL, SB_BOTTOM);	// Scroll to bottom
 }
 
 void CARPDlg::AddProxyArpCache(TCHAR* _Device, TCHAR* _ip, TCHAR* _Ethernet)
@@ -305,11 +317,11 @@ void CARPDlg::OnBnClickedButtonDelete()
 void CARPDlg::OnBnClickedButtonItemDel()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	POSITION pos = m_ctrlListControl.GetFirstSelectedItemPosition();
-	int nIndex = m_ctrlListControl.GetNextSelectedItem(pos);
+	POSITION pos = m_ListARPTable.GetFirstSelectedItemPosition();
+	int nIndex = m_ListARPTable.GetNextSelectedItem(pos);
 	if (nIndex > -1)
 	{
-		m_ctrlListControl.DeleteItem(nIndex);
+		m_ListARPTable.DeleteItem(nIndex);
 	}
 }
 
@@ -317,5 +329,13 @@ void CARPDlg::OnBnClickedButtonItemDel()
 void CARPDlg::OnBnClickedButtonAllDel()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	m_ctrlListControl.DeleteAllItems();
+	m_ListARPTable.DeleteAllItems();
+}
+
+
+void CARPDlg::OnTimer(UINT_PTR nIDEvent)
+{
+	// TODO: 여기에 메시지 처리기 코드를 추가 및/또는 기본값을 호출합니다.
+
+	__super::OnTimer(nIDEvent);
 }
