@@ -40,7 +40,7 @@
 #define ARP_ENET_TYPE			0x0100
 
 #define ETHER_ARP_TYPE			0x0608
-
+#define ETHER_IP_TYPE			0x0800
 
 #define ARP_TIME_OUT			2
 #define ARP_OPCODE_REQUEST		0x0100
