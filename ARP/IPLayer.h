@@ -2,7 +2,7 @@
 #include "BaseLayer.h"
 #include "pch.h"
 
-class IPLayer : public CBaseLayer{
+class CIPLayer : public CBaseLayer{
 
 private:
     void ResetHeader();
@@ -16,8 +16,8 @@ public:
     unsigned char*  GetDestinAddress();
     unsigned char*  GetSourceAddress();
 
-    IPLayer(char* pName);
-	virtual ~IPLayer();
+    CIPLayer(char* pName);
+	virtual ~CIPLayer();
 
     typedef struct _IP_HEADER {
         unsigned char   ver_hlegnth; // 4-bit IPv4 version, 4-bit header length
