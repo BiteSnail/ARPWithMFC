@@ -29,7 +29,18 @@ BOOL CARPLayer::Receive(unsigned char* ppayload) {
 
 	switch (arp_data->opercode) {
 	case ARP_OPCODE_REQUEST:
-		if (memcmp(arp_data->protocol_dstaddr, myip, IP_ADDR_SIZE) == 0)
+		if (memcpy(arp_data->protocol_srcaddr, arp_data->protocol_dstaddr, IP_ADDR_SIZE) == 0) {
+			for (auto& node : m_arpTable) {
+				if (node == arp_data->protocol_dstaddr) {
+					memcpy(node.hardware_addr, arp_data->hardware_srcaddr, ENET_ADDR_SIZE);
+					node.spanTime = CTime::GetCurrentTime();
+					return TRUE;
+				}
+			}
+			m_arpTable.push_back(ARP_NODE(arp_data->protocol_srcaddr, arp_data->hardware_srcaddr, TRUE));
+			return TRUE;
+		}
+		else if (memcmp(arp_data->protocol_dstaddr, myip, IP_ADDR_SIZE) == 0)
 			memcpy(arp_data->hardware_dstaddr, mymac, ENET_ADDR_SIZE);
 		else
 			for (auto& node : m_arpTable) {
