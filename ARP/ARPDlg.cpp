@@ -106,6 +106,7 @@ BEGIN_MESSAGE_MAP(CARPDlg, CDialogEx)
 	ON_CBN_SELCHANGE(IDC_COMBO_ADAPTER, &CARPDlg::OnCbnSelchangeComboAdapter)
 	ON_BN_CLICKED(IDC_BUTTON_SELECT, &CARPDlg::OnBnClickedButtonSelect)
 	ON_BN_CLICKED(IDC_BUTTON_SEND_ARP, &CARPDlg::OnBnClickedButtonSendArp)
+	ON_BN_CLICKED(IDC_BUTTON_G_ARP_SEND, &CARPDlg::OnBnClickedButtonGArpSend)
 END_MESSAGE_MAP()
 
 
@@ -419,3 +420,20 @@ void CARPDlg::OnBnClickedButtonSendArp()
 	}
 }
 
+
+
+void CARPDlg::OnBnClickedButtonGArpSend()
+{
+	CString sgarpaddr;
+	unsigned char srcaddr[IP_ADDR_SIZE] = { 0, };
+	unsigned char garpaddr[ENET_ADDR_SIZE] = { 0, };
+	
+	m_SrcIPADDRESS.GetAddress(srcaddr[0], srcaddr[1], srcaddr[2], srcaddr[3]);	
+	m_editHWAddr.GetWindowTextW(sgarpaddr);
+	StrToaddr(ARP_ENET_TYPE, garpaddr, sgarpaddr);
+
+	m_ARPLayer->setSrcAddr(garpaddr, srcaddr);
+	m_IPLayer->SetDestinAddress(srcaddr); m_IPLayer->SetSourceAddress(srcaddr);
+	
+	mp_UnderLayer->Send((unsigned char*)"dummy", 6);
+}

@@ -88,21 +88,23 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int nlength) {
 
 	setOpcode(ARP_OPCODE_REQUEST);
 
-	//check given address is in arp cache table
-	int idx = inCache(ip_data->dstaddr);
-	if (idx != -1) {
-		if (m_arpTable[idx].status == FALSE) {
-			AfxMessageBox(_T("Already In Cache!"));
-			return true;
+	if (memcmp(ip_data->srcaddr, ip_data->dstaddr, IP_ADDR_SIZE) != 0) {
+		//check given address is in arp cache table
+		int idx = inCache(ip_data->dstaddr);
+		if (idx != -1) {
+			if (m_arpTable[idx].status == FALSE) {
+				AfxMessageBox(_T("Already In Cache!"));
+				return true;
+			}
+			else {
+				m_arpTable[idx] = newNode;
+			}
 		}
 		else {
-			m_arpTable[idx] = newNode;
+			m_arpTable.push_back(newNode);
 		}
+		setSrcAddr(m_ether->GetSourceAddress(), ip_data->srcaddr);
 	}
-	else {
-		m_arpTable.push_back(newNode);
-	}
-	setSrcAddr(m_ether->GetSourceAddress(), ip_data->srcaddr);
 	setDstAddr(broadcastAddr, ip_data->dstaddr);
 
 	return ((CEthernetLayer*)mp_UnderLayer)->Send((unsigned char*)&m_sHeader, ARP_HEADER_SIZE);
