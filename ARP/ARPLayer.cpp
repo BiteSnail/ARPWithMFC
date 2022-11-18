@@ -30,33 +30,15 @@ BOOL CARPLayer::Receive(unsigned char* ppayload) {
 
 	switch (arp_data->opercode) {
 	case ARP_OPCODE_REQUEST:
-		if (memcpy(arp_data->protocol_srcaddr, arp_data->protocol_dstaddr, IP_ADDR_SIZE) == 0) {
-			for (auto& node : m_arpTable) {
-				if (node == arp_data->protocol_dstaddr) {
-					memcpy(node.hardware_addr, arp_data->hardware_srcaddr, ENET_ADDR_SIZE);
-					node.spanTime = CTime::GetCurrentTime();
-					return TRUE;
-				}
-			}
-			m_arpTable.push_back(ARP_NODE(arp_data->protocol_srcaddr, arp_data->hardware_srcaddr, TRUE));
-			m_ether->SetDestinAddress(arp_data->hardware_dstaddr);
-			return TRUE;
-		}
-		else if (memcmp(arp_data->protocol_dstaddr, myip, IP_ADDR_SIZE) == 0)
+		if (memcmp(arp_data->protocol_dstaddr, myip, IP_ADDR_SIZE) == 0) {
 			memcpy(arp_data->hardware_dstaddr, mymac, ENET_ADDR_SIZE);
-		else
-			for (auto& node : m_arpTable) {
-				if (node == arp_data->protocol_dstaddr) {
-					memcpy(arp_data->hardware_dstaddr, node.hardware_addr, ENET_ADDR_SIZE);
-					node.spanTime = CTime::GetCurrentTime();
-					break;
-				}
-			}
-		arp_data->opercode = ARP_OPCODE_REPLY;
-		swapaddr(arp_data->hardware_srcaddr, arp_data->hardware_dstaddr, ENET_ADDR_SIZE);
-		swapaddr(arp_data->protocol_srcaddr, arp_data->protocol_dstaddr, IP_ADDR_SIZE);
+			arp_data->opercode = ARP_OPCODE_REPLY;
+			swapaddr(arp_data->hardware_srcaddr, arp_data->hardware_dstaddr, ENET_ADDR_SIZE);
+			swapaddr(arp_data->protocol_srcaddr, arp_data->protocol_dstaddr, IP_ADDR_SIZE);
 
-		return mp_UnderLayer->Send((unsigned char*)arp_data, ARP_HEADER_SIZE);
+			m_ether->SetDestinAddress(arp_data->hardware_dstaddr);
+			return mp_UnderLayer->Send((unsigned char*)arp_data, ARP_HEADER_SIZE);
+		}
 		break;
 	case ARP_OPCODE_REPLY:
 		for (auto& node : m_arpTable) {
@@ -87,7 +69,7 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int nlength) {
 	memset(broadcastAddr, 255, ENET_ADDR_SIZE);
 	
 	ARP_NODE newNode(ip_data->dstaddr, broadcastAddr);
-
+	m_ether->SetDestinAddress(broadcastAddr);
 	setOpcode(ARP_OPCODE_REQUEST);
 
 	if (memcmp(ip_data->srcaddr, ip_data->dstaddr, IP_ADDR_SIZE) != 0) {
@@ -107,7 +89,7 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int nlength) {
 		}
 		setSrcAddr(m_ether->GetSourceAddress(), ip_data->srcaddr);
 	}
-	m_ether->SetDestinAddress(broadcastAddr);
+	
 	setDstAddr(broadcastAddr, ip_data->dstaddr);
 
 	return ((CEthernetLayer*)mp_UnderLayer)->Send((unsigned char*)&m_sHeader, ARP_HEADER_SIZE);
