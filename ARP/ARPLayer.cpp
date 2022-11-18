@@ -85,7 +85,7 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int nlength) {
 	CEthernetLayer* m_ether = (CEthernetLayer*)mp_UnderLayer;
 	unsigned char broadcastAddr[ENET_ADDR_SIZE];
 	memset(broadcastAddr, 255, ENET_ADDR_SIZE);
-	//m_ether->SetDestinAddress(broadcastAddr);
+	
 	ARP_NODE newNode(ip_data->dstaddr, broadcastAddr);
 
 	setOpcode(ARP_OPCODE_REQUEST);
@@ -107,6 +107,7 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int nlength) {
 		}
 		setSrcAddr(m_ether->GetSourceAddress(), ip_data->srcaddr);
 	}
+	m_ether->SetDestinAddress(broadcastAddr);
 	setDstAddr(broadcastAddr, ip_data->dstaddr);
 
 	return ((CEthernetLayer*)mp_UnderLayer)->Send((unsigned char*)&m_sHeader, ARP_HEADER_SIZE);
