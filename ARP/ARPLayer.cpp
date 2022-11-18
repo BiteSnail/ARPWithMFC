@@ -27,9 +27,19 @@ inline void CARPLayer::ResetHeader() {
 BOOL CARPLayer::Receive(unsigned char* ppayload) {
 	PARP_HEADER arp_data = (PARP_HEADER)ppayload;
 	CEthernetLayer* m_ether = (CEthernetLayer*)mp_UnderLayer;
+	int index = inCache(arp_data->hardware_srcaddr);
 
 	switch (arp_data->opercode) {
 	case ARP_OPCODE_REQUEST:
+		if (index >= 0) {
+			memcpy(m_arpTable[index].hardware_addr, arp_data->hardware_srcaddr, ENET_ADDR_SIZE);
+			m_arpTable[index].status = true;
+			m_arpTable[index].spanTime = CTime::GetCurrentTime();
+		}
+		else {
+			m_arpTable.push_back(ARP_NODE(arp_data->protocol_srcaddr, arp_data->hardware_srcaddr, TRUE));
+		}
+
 		if (memcmp(arp_data->protocol_dstaddr, myip, IP_ADDR_SIZE) == 0) {
 			memcpy(arp_data->hardware_dstaddr, mymac, ENET_ADDR_SIZE);
 			arp_data->opercode = ARP_OPCODE_REPLY;
