@@ -26,6 +26,7 @@ inline void CARPLayer::ResetHeader() {
 
 BOOL CARPLayer::Receive(unsigned char* ppayload) {
 	PARP_HEADER arp_data = (PARP_HEADER)ppayload;
+	CEthernetLayer* m_ether = (CEthernetLayer*)mp_UnderLayer;
 
 	switch (arp_data->opercode) {
 	case ARP_OPCODE_REQUEST:
@@ -38,6 +39,7 @@ BOOL CARPLayer::Receive(unsigned char* ppayload) {
 				}
 			}
 			m_arpTable.push_back(ARP_NODE(arp_data->protocol_srcaddr, arp_data->hardware_srcaddr, TRUE));
+			m_ether->SetDestinAddress(arp_data->hardware_dstaddr);
 			return TRUE;
 		}
 		else if (memcmp(arp_data->protocol_dstaddr, myip, IP_ADDR_SIZE) == 0)
@@ -83,7 +85,7 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int nlength) {
 	CEthernetLayer* m_ether = (CEthernetLayer*)mp_UnderLayer;
 	unsigned char broadcastAddr[ENET_ADDR_SIZE];
 	memset(broadcastAddr, 255, ENET_ADDR_SIZE);
-	m_ether->SetDestinAddress(broadcastAddr);
+	//m_ether->SetDestinAddress(broadcastAddr);
 	ARP_NODE newNode(ip_data->dstaddr, broadcastAddr);
 
 	setOpcode(ARP_OPCODE_REQUEST);
