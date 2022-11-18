@@ -106,6 +106,7 @@ BEGIN_MESSAGE_MAP(CARPDlg, CDialogEx)
 	ON_CBN_SELCHANGE(IDC_COMBO_ADAPTER, &CARPDlg::OnCbnSelchangeComboAdapter)
 	ON_BN_CLICKED(IDC_BUTTON_SELECT, &CARPDlg::OnBnClickedButtonSelect)
 	ON_BN_CLICKED(IDC_BUTTON_SEND_ARP, &CARPDlg::OnBnClickedButtonSendArp)
+	ON_BN_CLICKED(IDC_BUTTON_G_ARP_SEND, &CARPDlg::OnBnClickedButtonGArpSend)
 END_MESSAGE_MAP()
 
 
@@ -399,10 +400,10 @@ void CARPDlg::OnBnClickedButtonSendArp()
 	if (m_DstIPADDRESS.IsWindowEnabled() && !m_ComboxAdapter.IsWindowEnabled()) {
 		m_IPLayer->SetSourceAddress(srcip);
 		m_IPLayer->SetDestinAddress(dstip);
-		if (memcmp(srcip, dstip, IP_ADDR_SIZE)==0) {
-			AfxMessageBox(_T("Fail : Invalid Address"));
-			return;
-		}
+		//if (memcmp(srcip, dstip, IP_ADDR_SIZE)==0) {
+		//	AfxMessageBox(_T("Fail : Invalid Address"));
+		//	return;
+		//}
 		int check = 0;
 		for (int i = 0; i < IP_ADDR_SIZE; i++) {
 			check += dstip[i];
@@ -419,3 +420,23 @@ void CARPDlg::OnBnClickedButtonSendArp()
 	}
 }
 
+
+
+void CARPDlg::OnBnClickedButtonGArpSend()
+{
+	CString sgarpaddr;
+	unsigned char garpaddr[ENET_ADDR_SIZE] = { 0, };
+	unsigned char myaddr[ENET_ADDR_SIZE] = { 0, };
+	unsigned char srcip[IP_ADDR_SIZE] = { 0, };
+	m_SrcIPADDRESS.GetAddress(srcip[0], srcip[1], srcip[2], srcip[3]);
+
+	memcpy(myaddr, m_EtherLayer->GetDestinAddress(), ENET_ADDR_SIZE);
+	m_editHWAddr.GetWindowTextW(sgarpaddr);
+	StrToaddr(ARP_ENET_TYPE, garpaddr, sgarpaddr);
+	m_IPLayer->SetSourceAddress(srcip);
+	m_IPLayer->SetDestinAddress(srcip);
+
+	m_EtherLayer->SetSourceAddress(garpaddr);
+	mp_UnderLayer->Send((unsigned char*)"dummy", 6);
+	m_EtherLayer->SetSourceAddress(myaddr);
+}

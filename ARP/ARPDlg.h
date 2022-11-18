@@ -69,4 +69,5 @@ public:
 	
 	afx_msg void OnBnClickedButtonSelect();
 	afx_msg void OnBnClickedButtonSendArp();
+	afx_msg void OnBnClickedButtonGArpSend();
 };

@@ -26,24 +26,29 @@ inline void CARPLayer::ResetHeader() {
 
 BOOL CARPLayer::Receive(unsigned char* ppayload) {
 	PARP_HEADER arp_data = (PARP_HEADER)ppayload;
+	CEthernetLayer* m_ether = (CEthernetLayer*)mp_UnderLayer;
+	int index = inCache(arp_data->hardware_srcaddr);
 
 	switch (arp_data->opercode) {
 	case ARP_OPCODE_REQUEST:
-		if (memcmp(arp_data->protocol_dstaddr, myip, IP_ADDR_SIZE) == 0)
-			memcpy(arp_data->hardware_dstaddr, mymac, ENET_ADDR_SIZE);
-		else
-			for (auto& node : m_arpTable) {
-				if (node == arp_data->protocol_dstaddr) {
-					memcpy(arp_data->hardware_dstaddr, node.hardware_addr, ENET_ADDR_SIZE);
-					node.spanTime = CTime::GetCurrentTime();
-					break;
-				}
-			}
-		arp_data->opercode = ARP_OPCODE_REPLY;
-		swapaddr(arp_data->hardware_srcaddr, arp_data->hardware_dstaddr, ENET_ADDR_SIZE);
-		swapaddr(arp_data->protocol_srcaddr, arp_data->protocol_dstaddr, IP_ADDR_SIZE);
+		if (index >= 0) {
+			memcpy(m_arpTable[index].hardware_addr, arp_data->hardware_srcaddr, ENET_ADDR_SIZE);
+			m_arpTable[index].status = true;
+			m_arpTable[index].spanTime = CTime::GetCurrentTime();
+		}
+		else {
+			m_arpTable.push_back(ARP_NODE(arp_data->protocol_srcaddr, arp_data->hardware_srcaddr, TRUE));
+		}
 
-		return mp_UnderLayer->Send((unsigned char*)arp_data, ARP_HEADER_SIZE);
+		if (memcmp(arp_data->protocol_dstaddr, myip, IP_ADDR_SIZE) == 0) {
+			memcpy(arp_data->hardware_dstaddr, mymac, ENET_ADDR_SIZE);
+			arp_data->opercode = ARP_OPCODE_REPLY;
+			swapaddr(arp_data->hardware_srcaddr, arp_data->hardware_dstaddr, ENET_ADDR_SIZE);
+			swapaddr(arp_data->protocol_srcaddr, arp_data->protocol_dstaddr, IP_ADDR_SIZE);
+
+			m_ether->SetDestinAddress(arp_data->hardware_dstaddr);
+			return mp_UnderLayer->Send((unsigned char*)arp_data, ARP_HEADER_SIZE);
+		}
 		break;
 	case ARP_OPCODE_REPLY:
 		for (auto& node : m_arpTable) {
@@ -72,24 +77,26 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int nlength) {
 	CEthernetLayer* m_ether = (CEthernetLayer*)mp_UnderLayer;
 	unsigned char broadcastAddr[ENET_ADDR_SIZE];
 	memset(broadcastAddr, 255, ENET_ADDR_SIZE);
-	m_ether->SetDestinAddress(broadcastAddr);
+	
 	ARP_NODE newNode(ip_data->dstaddr, broadcastAddr);
-
+	m_ether->SetDestinAddress(broadcastAddr);
 	setOpcode(ARP_OPCODE_REQUEST);
 
-	//check given address is in arp cache table
-	int idx = inCache(ip_data->dstaddr);
-	if (idx != -1) {
-		if (m_arpTable[idx].status == FALSE) {
-			AfxMessageBox(_T("Already In Cache!"));
-			return true;
+	if (memcmp(ip_data->srcaddr, ip_data->dstaddr, IP_ADDR_SIZE) != 0) {
+		//check given address is in arp cache table
+		int idx = inCache(ip_data->dstaddr);
+		if (idx != -1) {
+			if (m_arpTable[idx].status == FALSE) {
+				AfxMessageBox(_T("Already In Cache!"));
+				return true;
+			}
+			else {
+				m_arpTable[idx] = newNode;
+			}
 		}
 		else {
-			m_arpTable[idx] = newNode;
+			m_arpTable.push_back(newNode);
 		}
-	}
-	else {
-		m_arpTable.push_back(newNode);
 	}
 	setSrcAddr(m_ether->GetSourceAddress(), ip_data->srcaddr);
 	setDstAddr(broadcastAddr, ip_data->dstaddr);
