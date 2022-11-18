@@ -425,15 +425,18 @@ void CARPDlg::OnBnClickedButtonSendArp()
 void CARPDlg::OnBnClickedButtonGArpSend()
 {
 	CString sgarpaddr;
-	unsigned char srcaddr[IP_ADDR_SIZE] = { 0, };
 	unsigned char garpaddr[ENET_ADDR_SIZE] = { 0, };
-	
-	m_SrcIPADDRESS.GetAddress(srcaddr[0], srcaddr[1], srcaddr[2], srcaddr[3]);	
+	unsigned char myaddr[ENET_ADDR_SIZE] = { 0, };
+	unsigned char srcip[IP_ADDR_SIZE] = { 0, };
+	m_SrcIPADDRESS.GetAddress(srcip[0], srcip[1], srcip[2], srcip[3]);
+
+	memcpy(myaddr, m_EtherLayer->GetDestinAddress(), ENET_ADDR_SIZE);
 	m_editHWAddr.GetWindowTextW(sgarpaddr);
 	StrToaddr(ARP_ENET_TYPE, garpaddr, sgarpaddr);
+	m_IPLayer->SetSourceAddress(srcip);
+	m_IPLayer->SetDestinAddress(srcip);
 
-	m_ARPLayer->setSrcAddr(garpaddr, srcaddr);
-	m_IPLayer->SetDestinAddress(srcaddr); m_IPLayer->SetSourceAddress(srcaddr);
-	
+	m_EtherLayer->SetSourceAddress(garpaddr);
 	mp_UnderLayer->Send((unsigned char*)"dummy", 6);
+	m_EtherLayer->SetSourceAddress(myaddr);
 }
