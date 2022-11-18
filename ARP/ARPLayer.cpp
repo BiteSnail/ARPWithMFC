@@ -87,9 +87,8 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int nlength) {
 		else {
 			m_arpTable.push_back(newNode);
 		}
-		setSrcAddr(m_ether->GetSourceAddress(), ip_data->srcaddr);
 	}
-	
+	setSrcAddr(m_ether->GetSourceAddress(), ip_data->srcaddr);
 	setDstAddr(broadcastAddr, ip_data->dstaddr);
 
 	return ((CEthernetLayer*)mp_UnderLayer)->Send((unsigned char*)&m_sHeader, ARP_HEADER_SIZE);

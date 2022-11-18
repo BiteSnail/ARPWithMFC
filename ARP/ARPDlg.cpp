@@ -400,10 +400,10 @@ void CARPDlg::OnBnClickedButtonSendArp()
 	if (m_DstIPADDRESS.IsWindowEnabled() && !m_ComboxAdapter.IsWindowEnabled()) {
 		m_IPLayer->SetSourceAddress(srcip);
 		m_IPLayer->SetDestinAddress(dstip);
-		if (memcmp(srcip, dstip, IP_ADDR_SIZE)==0) {
-			AfxMessageBox(_T("Fail : Invalid Address"));
-			return;
-		}
+		//if (memcmp(srcip, dstip, IP_ADDR_SIZE)==0) {
+		//	AfxMessageBox(_T("Fail : Invalid Address"));
+		//	return;
+		//}
 		int check = 0;
 		for (int i = 0; i < IP_ADDR_SIZE; i++) {
 			check += dstip[i];
