@@ -117,6 +117,31 @@ void CNILayer::GetMacAddressList(CStringArray& adapterlist) {
 	}
 }
 
+void CNILayer::GetMacAddress(const int index, UCHAR *mac) {
+	pcap_if_t* d = allDevices;
+	pcap_t* tadapter = nullptr;
+	LPADAPTER ad;
+	char errbuf[PCAP_ERRBUF_SIZE];
+	for (int i = 0; i < index && d; i++) {
+		d = d->next;
+	}
+
+	if (d == device) {
+		memcpy(mac, OidData->Data, ENET_ADDR_SIZE);
+	}
+	else {
+		if (d != nullptr)
+			tadapter = pcap_open_live((const char*)d->name, 65536, 0, 1000, errbuf);
+
+		ad = PacketOpenAdapter(d->name);
+		PacketRequest(ad, FALSE, OidData);
+
+		memcpy(mac, OidData->Data, ENET_ADDR_SIZE);
+		PacketCloseAdapter(ad);
+		pcap_close(tadapter);
+	}
+}
+
 void CNILayer::GetIPAddress(CString& ipv4addr, CString& ipv6addr) {
 	char ip[IPV6_ADDR_STR_LEN];
 	ipv4addr = DEFAULT_EDIT_TEXT;

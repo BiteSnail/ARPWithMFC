@@ -21,6 +21,7 @@ public:
     void            SetAdapterComboBox(CComboBox& adpaterlist);
     //Get MacAddressList CStringArray
     void            GetMacAddressList(CStringArray& adapterlist);
+    void            GetMacAddress(const int index, UCHAR *mac);
     /*Get IPv4, IPv6 address from selected Adapter
     !!You need to set adapter first!!
     */
