@@ -55,7 +55,7 @@ BOOL CARPLayer::Receive(unsigned char* ppayload) {
 			for (auto &a = m_proxyTable.begin(); a != m_proxyTable.end(); a++) {
 				//proxy에 등록된 ip가 arp request의 dst addr이라면 proxy arp reply 수행
 				if (memcmp(a->protocol_addr, arp_data->protocol_dstaddr, IP_ADDR_SIZE) == 0) {
-					memcpy(arp_data->hardware_dstaddr, mymac, ENET_ADDR_SIZE);
+					memcpy(arp_data->hardware_dstaddr, a->srchardware_addr, ENET_ADDR_SIZE);
 					arp_data->opercode = ARP_OPCODE_REPLY;
 					swapaddr(arp_data->hardware_srcaddr, arp_data->hardware_dstaddr, ENET_ADDR_SIZE);
 					swapaddr(arp_data->protocol_srcaddr, arp_data->protocol_dstaddr, IP_ADDR_SIZE);
