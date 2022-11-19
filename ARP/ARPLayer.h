@@ -24,8 +24,19 @@ public:
     void            setmyAddr(CString MAC, CString IP);
     void            deleteItem(CString IP);
     void            clearTable();
+    void            createProxy(unsigned char *src, unsigned char* ip, unsigned char* enet);
+    void            deleteProxy(const int index);
     CARPLayer(char* pName);
     virtual ~CARPLayer();
+
+    typedef struct _PROXY_ARP_NODE {
+        unsigned char   srchardware_addr[ENET_ADDR_SIZE];
+        unsigned char   protocol_addr[IP_ADDR_SIZE];
+        unsigned char   hardware_addr[ENET_ADDR_SIZE];
+    public:
+        struct _PROXY_ARP_NODE(unsigned char* srcenet, unsigned char* dstip, unsigned char* dstenet);
+        bool operator==(const struct _PROXY_ARP_NODE& ot);
+    }PROXY_ARP_NODE;
 
     typedef struct _ARP_NODE {
         unsigned char   protocol_addr[IP_ADDR_SIZE];
@@ -83,4 +94,5 @@ protected:
     unsigned char mymac[ENET_ADDR_SIZE];
     ARP_HEADER m_sHeader;
     std::vector<ARP_NODE> m_arpTable;
+    std::vector<PROXY_ARP_NODE> m_proxyTable;
 };
