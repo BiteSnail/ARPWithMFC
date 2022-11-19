@@ -145,9 +145,10 @@ BOOL CARPDlg::OnInitDialog()
 
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
-	InitFn();
 	SetTable();
 	SetComboBox();
+	InitFn();
+	
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
 
@@ -226,13 +227,12 @@ void CARPDlg::InitFn()
 	//
 	// 
 	//--------------------------------------------------------------------------------------
-	m_ctrlListControlProxy.SetExtendedStyle(LVS_EX_FULLROWSELECT);
-	m_ctrlListControlProxy.InsertColumn(0, _T("Device"));
-	m_ctrlListControlProxy.SetColumnWidth(0, 70);
-	m_ctrlListControlProxy.InsertColumn(1, _T("IP Address"));
-	m_ctrlListControlProxy.SetColumnWidth(1, 120);
-	m_ctrlListControlProxy.InsertColumn(2, _T("Ethernet Address"));
-	m_ctrlListControlProxy.SetColumnWidth(2, 140);
+	CRect rt;
+	m_ctrlListControlProxy.GetWindowRect(&rt);
+	m_ctrlListControlProxy.SetExtendedStyle(LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
+	m_ctrlListControlProxy.InsertColumn(1, _T("Device"), LVCFMT_CENTER, int(rt.Width() * 0.25));
+	m_ctrlListControlProxy.InsertColumn(2, _T("IP Address"), LVCFMT_CENTER, int(rt.Width() * 0.35));
+	m_ctrlListControlProxy.InsertColumn(3, _T("Ethernet Address"), LVCFMT_CENTER, int(rt.Width() * 0.4));
 	//--------------------------------------------------------------------------------------
 	// 
 	//
@@ -261,7 +261,7 @@ void CARPDlg::AddProxyArpCache(TCHAR* _Device, TCHAR* _ip, TCHAR* _Ethernet)
 void CARPDlg::OnBnClickedButtonAdd()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	//mDeviceAddDlg.InitDeviceAddDlg(0);
+	mDeviceAddDlg.InitDeviceAddDlg(0);
 	mDeviceAddDlg.ShowWindow(SW_SHOW);
 }
 

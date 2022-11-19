@@ -62,7 +62,7 @@ void CDeviceAdd::SetAdapterList()
 {
 	m_DeviceList.ResetContent();
 	m_IPADDRESS_DEVICE_ADD.SetWindowTextW(_T("0.0.0.0"));
-	theApp.MainDlg->m_Network->SetAdapterComboBox(m_DeviceList);
+	theApp.MainDlg->m_NILayer->SetAdapterComboBox(m_DeviceList);
 
 	UctoS(m_ucSrcAddr, m_unSrcAddr);
 	m_editDeviceEthernetAddr.SetWindowTextW(m_unSrcAddr);
