@@ -55,7 +55,7 @@ public:
 
 public:
 	void InitFn();
-	void AddProxyArpCache(TCHAR* _Device, TCHAR* _ip, TCHAR* _Ethernet);
+	void AddProxyArpCache(const int _index, unsigned char* ip, unsigned char* addr);
 	void SetTable();
 	void SetComboBox();
 	void updateTable();

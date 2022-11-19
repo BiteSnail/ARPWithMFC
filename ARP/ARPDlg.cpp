@@ -244,18 +244,27 @@ void CARPDlg::InitFn()
 	mDeviceAddDlg.ShowWindow(SW_HIDE);
 }
 
-void CARPDlg::AddProxyArpCache(TCHAR* _Device, TCHAR* _ip, TCHAR* _Ethernet)
+void CARPDlg::AddProxyArpCache(const int _index, unsigned char* ip, unsigned char* addr)
 {
-	if (_ip == NULL) { return; }
-
 	int nListIndex = m_ctrlListControlProxy.GetItemCount();
+	UCHAR mac[ENET_ADDR_SIZE] = { 0, };
+	CString deviceName, IP, ADDR;
 
-	m_ctrlListControlProxy.InsertItem(nListIndex, _Device);
+	//선택된 어뎁터 이름을 불러옵니다.
+	m_ComboxAdapter.GetLBText(_index, deviceName);
+	//선택된 어뎁터의 맥 주소를 불러옵니다.
+	m_NILayer->GetMacAddress(_index, mac);
+	//UCHAR에서 STRING으로 IP 및 ETERNET 주소를 변환합니다.
+	addrToStr(ARP_IP_TYPE, IP, ip);
+	addrToStr(ARP_ENET_TYPE, ADDR, addr);
 
-	m_ctrlListControlProxy.SetItemText(nListIndex, 1, _ip);
-	m_ctrlListControlProxy.SetItemText(nListIndex, 2, _Ethernet);
-	m_ctrlListControlProxy.SetColumnWidth(1, LVSCW_AUTOSIZE_USEHEADER);
-	m_ctrlListControlProxy.SendMessage(WM_VSCROLL, SB_BOTTOM);	// Scroll to bottom
+	//ARPLayer 계층의 Proxy Table에 등록합니다.
+
+	//Dlg Layer의 Proxy Table에 등록합니다.
+	m_ctrlListControlProxy.InsertItem(nListIndex, deviceName);
+	m_ctrlListControlProxy.SetItemText(nListIndex, 1, IP);
+	m_ctrlListControlProxy.SetItemText(nListIndex, 2, ADDR);
+	m_ARPLayer->createProxy(mac, ip, addr);
 }
 
 void CARPDlg::OnBnClickedButtonAdd()
