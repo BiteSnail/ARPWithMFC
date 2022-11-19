@@ -10,19 +10,18 @@ static char THIS_FILE[] = __FILE__;
 #define new DEBUG_NEW
 #endif
 
+//NILayer constructor
 CNILayer::CNILayer(char* pName)
-	: CBaseLayer(pName), device(NULL) {
+	: CBaseLayer(pName), device(NULL)
+	, m_AdapterObject(nullptr)
+	, canRead(false)
+	, adapter(nullptr)
+	, OidData(nullptr) {
 	char errbuf[PCAP_ERRBUF_SIZE];
-	m_AdapterObject = nullptr;
-	canRead = false;
-	adapter = nullptr;
-	OidData = nullptr;
 	memset(data, 0, ETHER_MAX_SIZE);
-	try {
-		if (pcap_findalldevs(&allDevices, errbuf) == -1)
-		{
+	try { //Adapter를 찾을 수 없는 경우 에러 발생
+		if (pcap_findalldevs(&allDevices, errbuf) == -1){
 			allDevices = NULL;
-			//fprintf(stderr, "Error in pcap_findalldevs: %s\n", errbuf);
 			throw(CString(errbuf));
 		}
 	}
@@ -33,9 +32,8 @@ CNILayer::CNILayer(char* pName)
 
 	try {
 		OidData = (PPACKET_OID_DATA)malloc(sizeof(PACKET_OID_DATA));
-		if (OidData == nullptr) {
-			throw(CString("MALLOC FAIL"));
-		}
+		if (OidData == nullptr) throw(CString("MALLOC FAIL"));
+		
 		OidData->Oid = 0x01010101;
 		OidData->Length = 6;
 		m_AdapterObject = nullptr;
@@ -59,25 +57,20 @@ CNILayer::~CNILayer() {
 }
 
 BOOL CNILayer::Receive(unsigned char* pkt) {
-	if (pkt == nullptr) {
-		return FALSE;
-	}
-	if (!(mp_aUpperLayer[0]->Receive(pkt))) {
-		return FALSE;
-	}
-
+	if (pkt == nullptr) return FALSE;
+	if (!(mp_aUpperLayer[0]->Receive(pkt))) return FALSE;
 	return TRUE;
 }
 
 BOOL CNILayer::Send(unsigned char* ppayload, int nlength) {
-	if (pcap_sendpacket(m_AdapterObject, ppayload, nlength))
-	{
+	if (pcap_sendpacket(m_AdapterObject, ppayload, nlength)){
 		AfxMessageBox(_T("Fail: Send Packet!"));
 		return FALSE;
 	}
 	return TRUE;
 }
 
+//
 void CNILayer::SetAdapterComboBox(CComboBox& adapterlist) {
 	for (pcap_if_t* d = allDevices; d; d = d->next) {
 		adapterlist.AddString(CString(d->description));
@@ -87,16 +80,12 @@ void CNILayer::SetAdapterComboBox(CComboBox& adapterlist) {
 UCHAR* CNILayer::SetAdapter(const int index) {
 	char errbuf[PCAP_ERRBUF_SIZE];
 	device = allDevices;
-	if (m_AdapterObject != nullptr)
-		pcap_close(m_AdapterObject);
+	if (m_AdapterObject != nullptr) pcap_close(m_AdapterObject);
 
-	for (int i = 0; i < index && device; i++) {
-		device = device->next;
-	}
-	if (device != nullptr)
-		m_AdapterObject = pcap_open_live((const char*)device->name, 65536, 0, 1000, errbuf);
-	if (m_AdapterObject == nullptr)
-	{
+	for (int i = 0; i < index && device; i++) device = device->next;
+
+	if (device != nullptr) m_AdapterObject = pcap_open_live((const char*)device->name, 65536, 0, 1000, errbuf);
+	if (m_AdapterObject == nullptr){
 		AfxMessageBox(_T("Fail: Connect Adapter"));
 		return nullptr;
 	}
@@ -105,11 +94,8 @@ UCHAR* CNILayer::SetAdapter(const int index) {
 	PacketRequest(adapter, FALSE, OidData);
 
 	PacketCloseAdapter(adapter);
-	//AfxBeginThread(ThreadFunction_RECEIVE, this);
-
 	return (OidData->Data);
 }
-
 
 void CNILayer::GetMacAddressList(CStringArray& adapterlist) {
 	for (pcap_if_t* d = allDevices; d; d = d->next) {
@@ -122,13 +108,9 @@ void CNILayer::GetMacAddress(const int index, UCHAR *mac) {
 	pcap_t* tadapter = nullptr;
 	LPADAPTER ad;
 	char errbuf[PCAP_ERRBUF_SIZE];
-	for (int i = 0; i < index && d; i++) {
-		d = d->next;
-	}
+	for (int i = 0; i < index && d; i++) d = d->next;
 
-	if (d == device) {
-		memcpy(mac, OidData->Data, ENET_ADDR_SIZE);
-	}
+	if (d == device) memcpy(mac, OidData->Data, ENET_ADDR_SIZE);
 	else {
 		if (d != nullptr)
 			tadapter = pcap_open_live((const char*)d->name, 65536, 0, 1000, errbuf);
@@ -144,18 +126,16 @@ void CNILayer::GetMacAddress(const int index, UCHAR *mac) {
 
 void CNILayer::GetIPAddress(CString& ipv4addr, CString& ipv6addr) {
 	char ip[IPV6_ADDR_STR_LEN];
-	ipv4addr = DEFAULT_EDIT_TEXT;
-	ipv6addr = DEFAULT_EDIT_TEXT;
+	ipv4addr = ipv6addr =DEFAULT_EDIT_TEXT;
 
-	for (auto addr = device->addresses; addr != nullptr; addr = addr->next)
-	{
+	for (auto addr = device->addresses; addr != nullptr; addr = addr->next){
 		auto realaddr = addr->addr;
 		const int sa_family = realaddr->sa_family;
 
-		const char* ptr = inet_ntop(sa_family, &realaddr->sa_data[sa_family == AF_INET ? 2 : 6], ip, IPV6_ADDR_STR_LEN);
+		const char* ptr = 
+			inet_ntop(sa_family, &realaddr->sa_data[sa_family == AF_INET ? 2 : 6], ip, IPV6_ADDR_STR_LEN);
 
-		switch (sa_family)
-		{
+		switch (sa_family){
 		case AF_INET:
 			ipv4addr = ptr;
 			break;
@@ -170,22 +150,18 @@ void CNILayer::GetIPAddress(CString& ipv4addr, CString& ipv6addr) {
 
 void CNILayer::GetIPAddress(CString& ipv4addr, CString& ipv6addr, const int index) {
 	char ip[IPV6_ADDR_STR_LEN];
-	ipv4addr = DEFAULT_EDIT_TEXT;
-	ipv6addr = DEFAULT_EDIT_TEXT;
+	ipv4addr = ipv6addr = DEFAULT_EDIT_TEXT;
 	pcap_if_t* d = allDevices;
-	for (int i = 0; i < index; i++) {
-		d = d->next;
-	}
+	for (int i = 0; i < index; i++)d = d->next;
 
-	for (auto addr = d->addresses; addr != nullptr; addr = addr->next)
-	{
+	for (auto addr = d->addresses; addr != nullptr; addr = addr->next){
 		auto realaddr = addr->addr;
 		const int sa_family = realaddr->sa_family;
 
-		const char* ptr = inet_ntop(sa_family, &realaddr->sa_data[sa_family == AF_INET ? 2 : 6], ip, IPV6_ADDR_STR_LEN);
+		const char* ptr = inet_ntop(sa_family, 
+			&realaddr->sa_data[sa_family == AF_INET ? 2 : 6], ip, IPV6_ADDR_STR_LEN);
 
-		switch (sa_family)
-		{
+		switch (sa_family){
 		case AF_INET:
 			ipv4addr = ptr;
 			break;
@@ -202,11 +178,9 @@ UINT CNILayer::ThreadFunction_RECEIVE(LPVOID pParam) {
 	struct pcap_pkthdr* header;
 	const u_char* pkt_data;
 	CNILayer* pNI = (CNILayer*)pParam;
-
 	int result = 1;
 
-	while (pNI->canRead)
-	{
+	while (pNI->canRead){
 		result = pcap_next_ex(pNI->m_AdapterObject, &header, &pkt_data);
 		if (result == 1) {
 			memcpy(pNI->data, pkt_data, ETHER_MAX_SIZE);

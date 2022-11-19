@@ -280,6 +280,7 @@ void CARPDlg::OnBnClickedButtonDelete()
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	POSITION pos = m_ctrlListControlProxy.GetFirstSelectedItemPosition();
 	int nItem = m_ctrlListControlProxy.GetNextSelectedItem(pos);
+	m_ARPLayer->deleteProxy(nItem);
 	m_ctrlListControlProxy.DeleteItem(nItem);
 }
 
