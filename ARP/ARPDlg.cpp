@@ -145,9 +145,10 @@ BOOL CARPDlg::OnInitDialog()
 
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
-	InitFn();
 	SetTable();
 	SetComboBox();
+	InitFn();
+	
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
 
@@ -226,13 +227,12 @@ void CARPDlg::InitFn()
 	//
 	// 
 	//--------------------------------------------------------------------------------------
-	m_ctrlListControlProxy.SetExtendedStyle(LVS_EX_FULLROWSELECT);
-	m_ctrlListControlProxy.InsertColumn(0, _T("Device"));
-	m_ctrlListControlProxy.SetColumnWidth(0, 70);
-	m_ctrlListControlProxy.InsertColumn(1, _T("IP Address"));
-	m_ctrlListControlProxy.SetColumnWidth(1, 120);
-	m_ctrlListControlProxy.InsertColumn(2, _T("Ethernet Address"));
-	m_ctrlListControlProxy.SetColumnWidth(2, 140);
+	CRect rt;
+	m_ctrlListControlProxy.GetWindowRect(&rt);
+	m_ctrlListControlProxy.SetExtendedStyle(LVS_EX_GRIDLINES | LVS_EX_FULLROWSELECT);
+	m_ctrlListControlProxy.InsertColumn(1, _T("Device"), LVCFMT_CENTER, int(rt.Width() * 0.25));
+	m_ctrlListControlProxy.InsertColumn(2, _T("IP Address"), LVCFMT_CENTER, int(rt.Width() * 0.35));
+	m_ctrlListControlProxy.InsertColumn(3, _T("Ethernet Address"), LVCFMT_CENTER, int(rt.Width() * 0.4));
 	//--------------------------------------------------------------------------------------
 	// 
 	//
@@ -244,24 +244,33 @@ void CARPDlg::InitFn()
 	mDeviceAddDlg.ShowWindow(SW_HIDE);
 }
 
-void CARPDlg::AddProxyArpCache(TCHAR* _Device, TCHAR* _ip, TCHAR* _Ethernet)
+void CARPDlg::AddProxyArpCache(const int _index, unsigned char* ip, unsigned char* addr)
 {
-	if (_ip == NULL) { return; }
-
 	int nListIndex = m_ctrlListControlProxy.GetItemCount();
+	UCHAR mac[ENET_ADDR_SIZE] = { 0, };
+	CString deviceName, IP, ADDR;
 
-	m_ctrlListControlProxy.InsertItem(nListIndex, _Device);
+	//선택된 어뎁터 이름을 불러옵니다.
+	m_ComboxAdapter.GetLBText(_index, deviceName);
+	//선택된 어뎁터의 맥 주소를 불러옵니다.
+	m_NILayer->GetMacAddress(_index, mac);
+	//UCHAR에서 STRING으로 IP 및 ETERNET 주소를 변환합니다.
+	addrToStr(ARP_IP_TYPE, IP, ip);
+	addrToStr(ARP_ENET_TYPE, ADDR, addr);
 
-	m_ctrlListControlProxy.SetItemText(nListIndex, 1, _ip);
-	m_ctrlListControlProxy.SetItemText(nListIndex, 2, _Ethernet);
-	m_ctrlListControlProxy.SetColumnWidth(1, LVSCW_AUTOSIZE_USEHEADER);
-	m_ctrlListControlProxy.SendMessage(WM_VSCROLL, SB_BOTTOM);	// Scroll to bottom
+	//ARPLayer 계층의 Proxy Table에 등록합니다.
+
+	//Dlg Layer의 Proxy Table에 등록합니다.
+	m_ctrlListControlProxy.InsertItem(nListIndex, deviceName);
+	m_ctrlListControlProxy.SetItemText(nListIndex, 1, IP);
+	m_ctrlListControlProxy.SetItemText(nListIndex, 2, ADDR);
+	m_ARPLayer->createProxy(mac, ip, addr);
 }
 
 void CARPDlg::OnBnClickedButtonAdd()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	//mDeviceAddDlg.InitDeviceAddDlg(0);
+	mDeviceAddDlg.InitDeviceAddDlg(m_ComboxAdapter.GetCurSel());
 	mDeviceAddDlg.ShowWindow(SW_SHOW);
 }
 
@@ -363,8 +372,11 @@ void CARPDlg::OnCbnSelchangeComboAdapter()
 void CARPDlg::OnBnClickedButtonSelect()
 {
 	CString MAC, IP;
+	unsigned char srcip[IP_ADDR_SIZE] = { 0, };
+
 	m_editSrcHwAddr.GetWindowTextW(MAC);
 	m_SrcIPADDRESS.GetWindowTextW(IP);
+	m_SrcIPADDRESS.GetAddress(srcip[0], srcip[1], srcip[2], srcip[3]);
 	
 	if (m_ComboxAdapter.IsWindowEnabled()) {
 		if (MAC != DEFAULT_EDIT_TEXT && IP != "0.0.0.0") {
@@ -373,6 +385,8 @@ void CARPDlg::OnBnClickedButtonSelect()
 			m_DstIPADDRESS.EnableWindow(TRUE);
 			m_NILayer->Receiveflip();
 			m_ARPLayer->setmyAddr(MAC, IP);
+			m_IPLayer->SetSourceAddress(srcip);
+			m_IPLayer->SetDestinAddress(srcip);
 			CDialog::SetDlgItemTextW(IDC_BUTTON_SELECT, _T("ReSelect"));
 			SetTimer(1, 1000, NULL);
 			AfxBeginThread(m_NILayer->ThreadFunction_RECEIVE, m_NILayer);
@@ -427,16 +441,15 @@ void CARPDlg::OnBnClickedButtonGArpSend()
 	CString sgarpaddr;
 	unsigned char garpaddr[ENET_ADDR_SIZE] = { 0, };
 	unsigned char myaddr[ENET_ADDR_SIZE] = { 0, };
-	unsigned char srcip[IP_ADDR_SIZE] = { 0, };
-	m_SrcIPADDRESS.GetAddress(srcip[0], srcip[1], srcip[2], srcip[3]);
+	unsigned char dstip[IP_ADDR_SIZE] = { 0, };
+	m_SrcIPADDRESS.GetAddress(dstip[0], dstip[1], dstip[2], dstip[3]);
+	m_IPLayer->SetDestinAddress(dstip);
 
-	memcpy(myaddr, m_EtherLayer->GetDestinAddress(), ENET_ADDR_SIZE);
+	memcpy(myaddr, m_EtherLayer->GetSourceAddress(), ENET_ADDR_SIZE);
 	m_editHWAddr.GetWindowTextW(sgarpaddr);
 	StrToaddr(ARP_ENET_TYPE, garpaddr, sgarpaddr);
-	m_IPLayer->SetSourceAddress(srcip);
-	m_IPLayer->SetDestinAddress(srcip);
 
 	m_EtherLayer->SetSourceAddress(garpaddr);
 	mp_UnderLayer->Send((unsigned char*)"dummy", 6);
-	m_EtherLayer->SetSourceAddress(myaddr);
+	//m_EtherLayer->SetSourceAddress(myaddr);
 }

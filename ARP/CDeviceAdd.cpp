@@ -46,6 +46,7 @@ BOOL CDeviceAdd::OnInitDialog()
 	CDialogEx::OnInitDialog();
 
 	// TODO:  여기에 추가 초기화 작업을 추가합니다.
+	SetAdapterList();
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
@@ -56,41 +57,44 @@ BOOL CDeviceAdd::OnInitDialog()
 void CDeviceAdd::InitDeviceAddDlg(int nTemp)	//nTemp는 사용은 안하지만 추가해놨습니다	
 {
 	SetAdapterList();
+	
+	if (nTemp >= 0) {
+		m_DeviceList.DeleteString(nTemp);
+		m_DeviceList.InsertString(nTemp, _T("Default"));
+		m_DeviceList.SetCurSel(nTemp);
+	}
+
+	m_IPADDRESS_DEVICE_ADD.SetWindowTextW(_T(""));
+	m_editDeviceEthernetAddr.SetWindowTextW(_T(""));
 }
 
 void CDeviceAdd::SetAdapterList()
 {
 	m_DeviceList.ResetContent();
-	m_IPADDRESS_DEVICE_ADD.SetWindowTextW(_T("0.0.0.0"));
-	theApp.MainDlg->m_Network->SetAdapterComboBox(m_DeviceList);
-
-	UctoS(m_ucSrcAddr, m_unSrcAddr);
-	m_editDeviceEthernetAddr.SetWindowTextW(m_unSrcAddr);
+	theApp.MainDlg->m_NILayer->SetAdapterComboBox(m_DeviceList);
 }
 
 void CDeviceAdd::UctoS(UCHAR* src, CString& dst)
 {
 	dst.Format(_T("%02x:%02x:%02x:%02x:%02x:%02x"),
-		src[0], src[1], src[2],
-		src[3], src[4], src[5]);
+		&src[0], &src[1], &src[2],
+		&src[3], &src[4], &src[5]);
 }
 
 void CDeviceAdd::OnBnClickedOk()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	BYTE _a1, _a2, _a3, _a4;
-	TCHAR tszIP[MAX_PATH] = { 0, };
-	CString mDeviceName;
-	CString mAddr;
-	//DEVICE
-	m_DeviceList.GetLBText(m_DeviceList.GetCurSel(), mDeviceName);
-	//IP
-	m_IPADDRESS_DEVICE_ADD.GetAddress(_a1, _a2, _a3, _a4);
-	_stprintf_s(tszIP, MAX_PATH, _T("%d.%d.%d.%d"), _a1, _a2, _a3, _a4);
-	//ETHERNET
-	m_editDeviceEthernetAddr.GetWindowTextW(mAddr);
-	//
-	theApp.MainDlg->AddProxyArpCache((TCHAR*)(LPCTSTR)mDeviceName, tszIP, (TCHAR*)(LPCTSTR)mAddr);
+	CString mMAC;
+	UCHAR ip[IP_ADDR_SIZE] = { 0, };
+	UCHAR mac[ENET_ADDR_SIZE] = { 0, };
+	
+	//IP, MAC
+	m_IPADDRESS_DEVICE_ADD.GetAddress(ip[0], ip[1], ip[2], ip[3]);
+	m_editDeviceEthernetAddr.GetWindowTextW(mMAC);
+	StrToaddr(ARP_ENET_TYPE, mac, mMAC);
+
+	//proxy data등록
+	theApp.MainDlg->AddProxyArpCache(m_DeviceList.GetCurSel(), ip, mac);
 	
 	CDialogEx::OnOK();
 }
@@ -106,7 +110,7 @@ void CDeviceAdd::OnBnClickedCancel()
 void CDeviceAdd::OnCbnCloseupComboDeviceList()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	int nIndex = m_DeviceList.GetCurSel();
+	//int nIndex = m_DeviceList.GetCurSel();
 	//memcpy(m_ucSrcAddr, theApp.MainDlg->m_Network->SetAdapter(nIndex), 6);
 
 	//UctoS(m_ucSrcAddr, m_unSrcAddr);
@@ -117,4 +121,7 @@ void CDeviceAdd::OnCbnCloseupComboDeviceList()
 void CDeviceAdd::OnCbnSelchangeComboDeviceList()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	//CString IPv4, IPv6;
+	//theApp.MainDlg->m_NILayer->GetIPAddress(IPv4, IPv6, m_DeviceList.GetCurSel());
+	//m_IPADDRESS_DEVICE_ADD.SetWindowTextW(IPv4);
 }

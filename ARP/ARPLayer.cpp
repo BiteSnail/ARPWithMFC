@@ -40,6 +40,7 @@ BOOL CARPLayer::Receive(unsigned char* ppayload) {
 			m_arpTable.push_back(ARP_NODE(arp_data->protocol_srcaddr, arp_data->hardware_srcaddr, TRUE));
 		}
 
+		//전달된 request의 dst ip가 나의 ip와 같은 경우 나의 enetaddr를 반환
 		if (memcmp(arp_data->protocol_dstaddr, myip, IP_ADDR_SIZE) == 0) {
 			memcpy(arp_data->hardware_dstaddr, mymac, ENET_ADDR_SIZE);
 			arp_data->opercode = ARP_OPCODE_REPLY;
@@ -48,6 +49,21 @@ BOOL CARPLayer::Receive(unsigned char* ppayload) {
 
 			m_ether->SetDestinAddress(arp_data->hardware_dstaddr);
 			return mp_UnderLayer->Send((unsigned char*)arp_data, ARP_HEADER_SIZE);
+		}
+		//만약 request의 dst ip가 나의 ip가 아닌 경우 proxy table 확인 후 등록된 정보가 있다면 reply
+		else {
+			for (auto &a = m_proxyTable.begin(); a != m_proxyTable.end(); a++) {
+				//proxy에 등록된 ip가 arp request의 dst addr이라면 proxy arp reply 수행
+				if (memcmp(a->protocol_addr, arp_data->protocol_dstaddr, IP_ADDR_SIZE) == 0) {
+					memcpy(arp_data->hardware_dstaddr, a->srchardware_addr, ENET_ADDR_SIZE);
+					arp_data->opercode = ARP_OPCODE_REPLY;
+					swapaddr(arp_data->hardware_srcaddr, arp_data->hardware_dstaddr, ENET_ADDR_SIZE);
+					swapaddr(arp_data->protocol_srcaddr, arp_data->protocol_dstaddr, IP_ADDR_SIZE);
+
+					m_ether->SetDestinAddress(arp_data->hardware_dstaddr);
+					return mp_UnderLayer->Send((unsigned char*)arp_data, ARP_HEADER_SIZE);
+				}
+			}
 		}
 		break;
 	case ARP_OPCODE_REPLY:
@@ -281,4 +297,27 @@ std::vector<CARPLayer::ARP_NODE> CARPLayer::getTable() {
 
 void CARPLayer::clearTable() {
 	m_arpTable.clear();
+}
+
+CARPLayer::_PROXY_ARP_NODE::_PROXY_ARP_NODE(unsigned char* srcenet, unsigned char* dstip, unsigned char* dstenet) {
+	if (srcenet) memcpy(srchardware_addr, srcenet, ENET_ADDR_SIZE);
+	else memset(srchardware_addr, 0, ENET_ADDR_SIZE);
+	if (dstip) memcpy(protocol_addr, dstip, IP_ADDR_SIZE);
+	else memset(protocol_addr, 0, IP_ADDR_SIZE);
+	if (dstenet) memcpy(hardware_addr, dstenet, ENET_ADDR_SIZE);
+	else memset(hardware_addr, 0, ENET_ADDR_SIZE);
+}
+
+bool CARPLayer::_PROXY_ARP_NODE::operator==(const struct _PROXY_ARP_NODE& ot) {
+	return (memcmp(ot.hardware_addr, hardware_addr, ENET_ADDR_SIZE) == 0) &&
+		(memcmp(ot.srchardware_addr, srchardware_addr, ENET_ADDR_SIZE) == 0) &&
+		(memcmp(ot.protocol_addr, protocol_addr, IP_ADDR_SIZE) == 0);
+}
+
+void CARPLayer::createProxy(unsigned char* src, unsigned char* ip, unsigned char* enet) {
+	m_proxyTable.push_back(PROXY_ARP_NODE(src, ip, enet));
+}
+
+void CARPLayer::deleteProxy(const int index) {
+	m_proxyTable.erase(m_proxyTable.begin() + index);
 }

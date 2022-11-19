@@ -21,10 +21,12 @@ public:
     void            SetAdapterComboBox(CComboBox& adpaterlist);
     //Get MacAddressList CStringArray
     void            GetMacAddressList(CStringArray& adapterlist);
+    void            GetMacAddress(const int index, UCHAR *mac);
     /*Get IPv4, IPv6 address from selected Adapter
     !!You need to set adapter first!!
     */
     void            GetIPAddress(CString& ipv4addr, CString& ipv6addr);
+    void            GetIPAddress(CString& ipv4addr, CString& ipv6addr, const int index);
     //if canread is True Thread activate
     static UINT     ThreadFunction_RECEIVE(LPVOID pParam);
     //set canread option reverse
