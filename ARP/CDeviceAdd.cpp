@@ -46,6 +46,7 @@ BOOL CDeviceAdd::OnInitDialog()
 	CDialogEx::OnInitDialog();
 
 	// TODO:  여기에 추가 초기화 작업을 추가합니다.
+	SetAdapterList();
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
@@ -56,16 +57,21 @@ BOOL CDeviceAdd::OnInitDialog()
 void CDeviceAdd::InitDeviceAddDlg(int nTemp)	//nTemp는 사용은 안하지만 추가해놨습니다	
 {
 	SetAdapterList();
+	
+	if (nTemp >= 0) {
+		m_DeviceList.DeleteString(nTemp);
+		m_DeviceList.InsertString(nTemp, _T("Default"));
+		m_DeviceList.SetCurSel(nTemp);
+	}
+
+	m_IPADDRESS_DEVICE_ADD.SetWindowTextW(_T(""));
+	m_editDeviceEthernetAddr.SetWindowTextW(_T(""));
 }
 
 void CDeviceAdd::SetAdapterList()
 {
 	m_DeviceList.ResetContent();
-	m_IPADDRESS_DEVICE_ADD.SetWindowTextW(_T("0.0.0.0"));
 	theApp.MainDlg->m_NILayer->SetAdapterComboBox(m_DeviceList);
-
-	UctoS(m_ucSrcAddr, m_unSrcAddr);
-	m_editDeviceEthernetAddr.SetWindowTextW(m_unSrcAddr);
 }
 
 void CDeviceAdd::UctoS(UCHAR* src, CString& dst)
@@ -117,4 +123,10 @@ void CDeviceAdd::OnCbnCloseupComboDeviceList()
 void CDeviceAdd::OnCbnSelchangeComboDeviceList()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	CString IPv4, IPv6;
+	theApp.MainDlg->m_NILayer->GetIPAddress(IPv4, IPv6, m_DeviceList.GetCurSel());
+	m_IPADDRESS_DEVICE_ADD.SetWindowTextW(IPv4);
+	//m_editDeviceEthernetAddr.SetWindowTextW(m_unSrcAddr);
+
+	//UctoS(m_ucSrcAddr, m_unSrcAddr);
 }

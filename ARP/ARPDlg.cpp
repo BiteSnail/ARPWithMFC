@@ -261,7 +261,7 @@ void CARPDlg::AddProxyArpCache(TCHAR* _Device, TCHAR* _ip, TCHAR* _Ethernet)
 void CARPDlg::OnBnClickedButtonAdd()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	mDeviceAddDlg.InitDeviceAddDlg(0);
+	mDeviceAddDlg.InitDeviceAddDlg(m_ComboxAdapter.GetCurSel());
 	mDeviceAddDlg.ShowWindow(SW_SHOW);
 }
 
