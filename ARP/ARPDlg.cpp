@@ -363,8 +363,11 @@ void CARPDlg::OnCbnSelchangeComboAdapter()
 void CARPDlg::OnBnClickedButtonSelect()
 {
 	CString MAC, IP;
+	unsigned char srcip[IP_ADDR_SIZE] = { 0, };
+
 	m_editSrcHwAddr.GetWindowTextW(MAC);
 	m_SrcIPADDRESS.GetWindowTextW(IP);
+	m_SrcIPADDRESS.GetAddress(srcip[0], srcip[1], srcip[2], srcip[3]);
 	
 	if (m_ComboxAdapter.IsWindowEnabled()) {
 		if (MAC != DEFAULT_EDIT_TEXT && IP != "0.0.0.0") {
@@ -373,6 +376,8 @@ void CARPDlg::OnBnClickedButtonSelect()
 			m_DstIPADDRESS.EnableWindow(TRUE);
 			m_NILayer->Receiveflip();
 			m_ARPLayer->setmyAddr(MAC, IP);
+			m_IPLayer->SetSourceAddress(srcip);
+			m_IPLayer->SetDestinAddress(srcip);
 			CDialog::SetDlgItemTextW(IDC_BUTTON_SELECT, _T("ReSelect"));
 			SetTimer(1, 1000, NULL);
 			AfxBeginThread(m_NILayer->ThreadFunction_RECEIVE, m_NILayer);
@@ -427,16 +432,15 @@ void CARPDlg::OnBnClickedButtonGArpSend()
 	CString sgarpaddr;
 	unsigned char garpaddr[ENET_ADDR_SIZE] = { 0, };
 	unsigned char myaddr[ENET_ADDR_SIZE] = { 0, };
-	unsigned char srcip[IP_ADDR_SIZE] = { 0, };
-	m_SrcIPADDRESS.GetAddress(srcip[0], srcip[1], srcip[2], srcip[3]);
+	unsigned char dstip[IP_ADDR_SIZE] = { 0, };
+	m_SrcIPADDRESS.GetAddress(dstip[0], dstip[1], dstip[2], dstip[3]);
+	m_IPLayer->SetDestinAddress(dstip);
 
-	memcpy(myaddr, m_EtherLayer->GetDestinAddress(), ENET_ADDR_SIZE);
+	memcpy(myaddr, m_EtherLayer->GetSourceAddress(), ENET_ADDR_SIZE);
 	m_editHWAddr.GetWindowTextW(sgarpaddr);
 	StrToaddr(ARP_ENET_TYPE, garpaddr, sgarpaddr);
-	m_IPLayer->SetSourceAddress(srcip);
-	m_IPLayer->SetDestinAddress(srcip);
 
 	m_EtherLayer->SetSourceAddress(garpaddr);
 	mp_UnderLayer->Send((unsigned char*)"dummy", 6);
-	m_EtherLayer->SetSourceAddress(myaddr);
+	//m_EtherLayer->SetSourceAddress(myaddr);
 }
