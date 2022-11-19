@@ -143,6 +143,36 @@ void CNILayer::GetIPAddress(CString& ipv4addr, CString& ipv6addr) {
 	}
 }
 
+void CNILayer::GetIPAddress(CString& ipv4addr, CString& ipv6addr, const int index) {
+	char ip[IPV6_ADDR_STR_LEN];
+	ipv4addr = DEFAULT_EDIT_TEXT;
+	ipv6addr = DEFAULT_EDIT_TEXT;
+	pcap_if_t* d = allDevices;
+	for (int i = 0; i < index; i++) {
+		d = d->next;
+	}
+
+	for (auto addr = d->addresses; addr != nullptr; addr = addr->next)
+	{
+		auto realaddr = addr->addr;
+		const int sa_family = realaddr->sa_family;
+
+		const char* ptr = inet_ntop(sa_family, &realaddr->sa_data[sa_family == AF_INET ? 2 : 6], ip, IPV6_ADDR_STR_LEN);
+
+		switch (sa_family)
+		{
+		case AF_INET:
+			ipv4addr = ptr;
+			break;
+		case AF_INET6:
+			ipv6addr = ptr;
+			break;
+		default:
+			return;
+		}
+	}
+}
+
 UINT CNILayer::ThreadFunction_RECEIVE(LPVOID pParam) {
 	struct pcap_pkthdr* header;
 	const u_char* pkt_data;

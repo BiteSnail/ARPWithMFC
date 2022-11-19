@@ -25,6 +25,7 @@ public:
     !!You need to set adapter first!!
     */
     void            GetIPAddress(CString& ipv4addr, CString& ipv6addr);
+    void            GetIPAddress(CString& ipv4addr, CString& ipv6addr, const int index);
     //if canread is True Thread activate
     static UINT     ThreadFunction_RECEIVE(LPVOID pParam);
     //set canread option reverse
