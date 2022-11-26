@@ -29,6 +29,10 @@ BOOL CARPLayer::Receive(unsigned char* ppayload) {
 	CEthernetLayer* m_ether = (CEthernetLayer*)mp_UnderLayer;
 	int index = inCache(arp_data->hardware_srcaddr);
 
+	if (memcmp(myip, arp_data->protocol_srcaddr, IP_ADDR_SIZE) == 0) {
+		return FALSE;
+	}
+
 	switch (arp_data->opercode) {
 	case ARP_OPCODE_REQUEST:
 		if (index >= 0) {
