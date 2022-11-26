@@ -451,5 +451,5 @@ void CARPDlg::OnBnClickedButtonGArpSend()
 
 	m_EtherLayer->SetSourceAddress(garpaddr);
 	mp_UnderLayer->Send((unsigned char*)"dummy", 6);
-	//m_EtherLayer->SetSourceAddress(myaddr);
+	m_EtherLayer->SetSourceAddress(myaddr);
 }
