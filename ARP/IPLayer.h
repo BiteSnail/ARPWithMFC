@@ -1,8 +1,9 @@
 #pragma once
 #include "BaseLayer.h"
 #include "pch.h"
+#include<list>
 
-class CIPLayer : public CBaseLayer{
+class CIPLayer : public CBaseLayer {
 
 private:
     void ResetHeader();
@@ -13,11 +14,16 @@ public:
     BOOL			Send(unsigned char* ppayload, int nlength);
     void			SetDestinAddress(unsigned char* pAddress);
     void			SetSourceAddress(unsigned char* pAddress);
-    unsigned char*  GetDestinAddress();
-    unsigned char*  GetSourceAddress();
+    unsigned char* GetDestinAddress();
+    unsigned char* GetSourceAddress();
+    void            AddRouteTable(unsigned char _destination_ip[4], unsigned char _netmask[4], unsigned char _gateway[4], unsigned char _flag, unsigned char interFace);
+
+    bool LongestPrefix(unsigned char* a, unsigned char* b);
+
+    void Routing(unsigned char dest_ip[4], unsigned char* ppayload);
 
     CIPLayer(char* pName);
-	virtual ~CIPLayer();
+    virtual ~CIPLayer();
 
     typedef struct _IP_HEADER {
         unsigned char   ver_hlegnth; // 4-bit IPv4 version, 4-bit header length
@@ -26,16 +32,27 @@ public:
 
         unsigned short  id;          // Unique identifier
         unsigned char   offset;      // Fragment offset field
-        
+
         unsigned char   ttl;         // Time to live
         unsigned char   ptype;       // Protocol type
         unsigned short  checksum;    // IP checksum
-        
+
         unsigned char   ip_srcaddr[IP_ADDR_SIZE];
         unsigned char   ip_dstaddr[IP_ADDR_SIZE];
         unsigned char   ip_data[IP_MAX_DATA_SIZE];
 
     } IP_HEADER, * PIP_HEADER;
+
+    typedef struct _ROUTING_TABLE {
+        unsigned char destination_ip[4];
+        unsigned char netmask[4];
+        unsigned char gateway[4];
+        unsigned char flag;          // Host: 1, Gateway:2
+        unsigned char _interface;
+    }ROUTING_TABLE, * IP_TABLE;
+
+
+    std::list<ROUTING_TABLE> route_table;
 
 protected:
     IP_HEADER m_sHeader;
