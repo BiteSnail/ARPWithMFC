@@ -12,6 +12,7 @@ public:
 
     BOOL			Receive(unsigned char* ppayload);
     BOOL			Send(unsigned char* ppayload, int nlength);
+    BOOL            RSend(unsigned char* ppayload, int nlength, unsigned char* gatewayIP);
     void			SetDestinAddress(unsigned char* pAddress);
     void			SetSourceAddress(unsigned char* pAddress);
     unsigned char* GetDestinAddress();
@@ -19,9 +20,9 @@ public:
     void            AddRouteTable(unsigned char* _destination_ip, unsigned char* _netmask, unsigned char* _gateway, unsigned char _flag, unsigned char interFace);
     void            DelRouteTable(unsigned char index);
     void            SetDefaultGateway(unsigned char* _gateway, unsigned char _flag, unsigned char interFace);
-  
+    void            SetHeaderFields(unsigned char* ppayload);
 
-    bool LongestPrefix(unsigned char* a, unsigned char* b);
+    bool            LongestPrefix(unsigned char* a, unsigned char* b);
 
     void Routing(unsigned char* dest_ip, unsigned char* ppayload);
 

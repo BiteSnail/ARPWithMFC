@@ -14,6 +14,7 @@ private:
 public:
     BOOL            Receive(unsigned char* ppayload);
     BOOL            Send(unsigned char* ppayload, int nlength);
+    BOOL            RSend(unsigned char* ppayload, int nlength, unsigned char* gatewayIP);
     int             inCache(const unsigned char* ipaddr); //없으면 -1 있으면 해당 인덱스 반환
     void            setType(const unsigned short htype, const unsigned short ptype);
     void            setOpcode(const unsigned short opcode);
