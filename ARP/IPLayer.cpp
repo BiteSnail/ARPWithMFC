@@ -15,17 +15,9 @@ CIPLayer::CIPLayer(char* pName) : CBaseLayer(pName) {
     m_sHeader.offset = 0x00;
 
     m_sHeader.ttl = 0xff;
-    m_sHeader.ptype = 0x06;
+    m_sHeader.ptype = 0x06;         //<- tcp number. icmp number로 나중에 수정 필요
     m_sHeader.checksum = 0x0000;
-
-    ROUTING_TABLE default_gateway;
-    memset(default_gateway.destination_ip, 0, 4);
-    memset(default_gateway.netmask, 0, 4);
-    memset(default_gateway.gateway, 0, 4);
-    default_gateway.flag = 2;
-    default_gateway._interface = 1;
-    route_table.push_back(default_gateway);
-}
+ }
 
 CIPLayer::~CIPLayer() {
 }
@@ -59,40 +51,25 @@ BOOL CIPLayer::Send(unsigned char* ppayload, int nlength) {
     return bSuccess;
 }
 
-//BOOL CIPLayer::Receive(unsigned char* ppayload){
-//    BOOL bSuccess = FALSE;
-//    PIP_HEADER pFrame = (PIP_HEADER)ppayload;
-//
-//    if(memcmp(pFrame->ip_dstaddr, m_sHeader.ip_srcaddr, sizeof(m_sHeader.ip_srcaddr)) == 0){
-//        bSuccess = mp_aUpperLayer[0]->Receive(pFrame->ip_data);
-//    }
-//
-//    return bSuccess;
-//}
-
 BOOL CIPLayer::Receive(unsigned char* ppayload) {
     //변경된 Receive 함수
     BOOL bSuccess = FALSE;
     PIP_HEADER pFrame = (PIP_HEADER)ppayload;
 
-    if (memcmp(pFrame->ip_dstaddr, m_sHeader.ip_srcaddr, sizeof(m_sHeader.ip_srcaddr)) == 0) {
-        bSuccess = mp_aUpperLayer[0]->Receive(pFrame->ip_data);
-    }
-
     Routing(pFrame->ip_dstaddr, ppayload);
     return bSuccess;
 }
 
-void CIPLayer::AddRouteTable(unsigned char _destination_ip[4], unsigned char _netmask[4], unsigned char _gateway[4], unsigned char _flag, unsigned char interFace) {
-    ROUTING_TABLE rt;
-    memcpy(&rt.destination_ip, _destination_ip, 4);
-    memcpy(&rt.netmask, _netmask, 4);
-    memcpy(&rt.gateway, _gateway, 4);
+void CIPLayer::AddRouteTable(unsigned char* _destination_ip, unsigned char* _netmask, unsigned char* _gateway, unsigned char _flag, unsigned char interFace) {
+    ROUTING_TABLE_NODE rt;
+    memcpy(&rt.destination_ip, _destination_ip, IP_ADDR_SIZE);
+    memcpy(&rt.netmask, _netmask, IP_ADDR_SIZE);
+    memcpy(&rt.gateway, _gateway, IP_ADDR_SIZE);
     rt.flag = _flag;
     rt._interface = interFace;
 
     //route_table list에서 새로운 열을 추가할 위치 찾기...
-    std::list<ROUTING_TABLE>::iterator add_point = route_table.begin();
+    std::list<ROUTING_TABLE_NODE>::iterator add_point = route_table.begin();
     while (LongestPrefix(add_point->gateway, rt.gateway)) {
         add_point++;
     }
@@ -107,11 +84,11 @@ bool CIPLayer::LongestPrefix(unsigned char* a, unsigned char* b) {
     return true;
 }
 
-void CIPLayer::Routing(unsigned char dest_ip[4], unsigned char* ppayload) {
+void CIPLayer::Routing(unsigned char* dest_ip, unsigned char* ppayload) {
     unsigned char masked[4];
 
-    for each (ROUTING_TABLE row in route_table) {       //table에서 한 열씩 뽑아...
-        for (int i = 0; i < 4; i++)masked[i] = dest_ip[i] & row.netmask[i];        //마스킹 해보고
+    for each (ROUTING_TABLE_NODE row in route_table) {       //table에서 한 열씩 뽑아...
+        for (int i = 0; i < IP_ADDR_SIZE; i++)masked[i] = dest_ip[i] & row.netmask[i];        //마스킹 해보고
         if (memcmp(masked, row.destination_ip, 4) == 0) {       //결과가 같다면,
             if (row.flag == 1) {    //flag: Host
                 SetDestinAddress(dest_ip);

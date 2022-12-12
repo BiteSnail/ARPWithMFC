@@ -16,11 +16,11 @@ public:
     void			SetSourceAddress(unsigned char* pAddress);
     unsigned char* GetDestinAddress();
     unsigned char* GetSourceAddress();
-    void            AddRouteTable(unsigned char _destination_ip[4], unsigned char _netmask[4], unsigned char _gateway[4], unsigned char _flag, unsigned char interFace);
+    void            AddRouteTable(unsigned char* _destination_ip, unsigned char* _netmask, unsigned char* _gateway, unsigned char _flag, unsigned char interFace);
 
     bool LongestPrefix(unsigned char* a, unsigned char* b);
 
-    void Routing(unsigned char dest_ip[4], unsigned char* ppayload);
+    void Routing(unsigned char* dest_ip, unsigned char* ppayload);
 
     CIPLayer(char* pName);
     virtual ~CIPLayer();
@@ -43,16 +43,16 @@ public:
 
     } IP_HEADER, * PIP_HEADER;
 
-    typedef struct _ROUTING_TABLE {
-        unsigned char destination_ip[4];
-        unsigned char netmask[4];
-        unsigned char gateway[4];
+    typedef struct _ROUTING_TABLE_NODE {
+        unsigned char destination_ip[IP_ADDR_SIZE];
+        unsigned char netmask[IP_ADDR_SIZE];
+        unsigned char gateway[IP_ADDR_SIZE];
         unsigned char flag;          // Host: 1, Gateway:2
         unsigned char _interface;
-    }ROUTING_TABLE, * IP_TABLE;
+    }ROUTING_TABLE_NODE, * IP_TABLE;
 
 
-    std::list<ROUTING_TABLE> route_table;
+    std::list<ROUTING_TABLE_NODE> route_table;
 
 protected:
     IP_HEADER m_sHeader;
