@@ -63,6 +63,7 @@ public:
 	void SetTable();
 	void SetComboBox();
 	void updateTable();
+	void SetPosition(CDialogEx& dlg, int IDD_dlg);
 
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnBnClickedButtonAdd();
