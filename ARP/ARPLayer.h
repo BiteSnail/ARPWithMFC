@@ -14,7 +14,7 @@ private:
 public:
     BOOL            Receive(unsigned char* ppayload);
     BOOL            Send(unsigned char* ppayload, int nlength);
-    int             inCache(const unsigned char* ipaddr);
+    int             inCache(const unsigned char* ipaddr); //없으면 -1 있으면 해당 인덱스 반환
     void            setType(const unsigned short htype, const unsigned short ptype);
     void            setOpcode(const unsigned short opcode);
     void            setSrcAddr(const unsigned char enetAddr[], const unsigned char ipAddr[]);
@@ -26,6 +26,7 @@ public:
     void            clearTable();
     void            createProxy(unsigned char *src, unsigned char* ip, unsigned char* enet);
     void            deleteProxy(const int index);
+    bool            getMACinARP(unsigned char* dstIP, unsigned char* MAC);
     CARPLayer(char* pName);
     virtual ~CARPLayer();
 

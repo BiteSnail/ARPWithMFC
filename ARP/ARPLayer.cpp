@@ -24,6 +24,17 @@ inline void CARPLayer::ResetHeader() {
 	m_sHeader = ARP_HEADER();
 }
 
+bool CARPLayer::getMACinARP(unsigned char* dstIP, unsigned char* MAC)
+{
+	int index = inCache(dstIP);
+	bool isfound = FALSE;
+	if (index != -1) {
+		memcpy(MAC, m_arpTable[index].hardware_addr, ENET_ADDR_SIZE);
+		isfound = TRUE;
+	}
+	return isfound;
+}
+
 BOOL CARPLayer::Receive(unsigned char* ppayload) {
 	PARP_HEADER arp_data = (PARP_HEADER)ppayload;
 	CEthernetLayer* m_ether = (CEthernetLayer*)mp_UnderLayer;

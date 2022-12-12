@@ -247,6 +247,11 @@ void CARPDlg::SetPosition(CDialogEx& dlg, int IDD_dlg)
 	dlg.SetWindowPos(NULL, pos.x + (Rect.Width() / 2), pos.y + (Rect.Height() / 2), 0, 0, SWP_NOSIZE);
 }
 
+bool CARPDlg::bgetMACaddrInARP(unsigned char* IP, unsigned char* MAC)
+{
+	return m_ARPLayer->getMACinARP(IP, MAC);
+}
+
 void CARPDlg::InitFn()
 {
 	//--------------------------------------------------------------------------------------
