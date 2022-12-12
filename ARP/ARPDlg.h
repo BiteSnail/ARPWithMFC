@@ -6,7 +6,8 @@
 
 #include "BaseLayer.h"
 #include "CDeviceAdd.h"
-
+#include "CProxyEntry.h"
+#include "CRoutingTableEntry.h"
 // CARPDlg 대화 상자
 class CARPDlg : public CDialogEx, public CBaseLayer
 {
@@ -45,6 +46,7 @@ public:
 
 	CListCtrl		m_ListARPTable;
 	CListCtrl		m_ctrlListControlProxy;
+	CListCtrl		m_ListStaticRoutingTable;
 	CIPAddressCtrl	m_SrcIPADDRESS;
 	CIPAddressCtrl	m_DstIPADDRESS;
 
@@ -52,10 +54,12 @@ public:
 	CEdit			m_editHWAddr;
 	CEdit			m_editSrcHwAddr;
 	CDeviceAdd		mDeviceAddDlg;
-
+	CProxyEntry     mProxyEntryDlg;
+	CRoutingTableEntry mRoutingTabledlg;
 public:
 	void InitFn();
 	void AddProxyArpCache(const int _index, unsigned char* ip, unsigned char* addr);
+	void AddRoutingTable(const int _index, CString ip1, CString ip2, CString ip3, CString mFlag, CString mInterface);
 	void SetTable();
 	void SetComboBox();
 	void updateTable();
@@ -70,4 +74,7 @@ public:
 	afx_msg void OnBnClickedButtonSelect();
 	afx_msg void OnBnClickedButtonSendArp();
 	afx_msg void OnBnClickedButtonGArpSend();
+	afx_msg void OnBnClickedButtonAddProxyEntry();
+	afx_msg void OnBnClickedButtonAddRoutingTableEntry();
+	afx_msg void OnBnClickedButtonDelRoutingTableEntry();
 };

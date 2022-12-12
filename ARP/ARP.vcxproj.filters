@@ -57,6 +57,12 @@
     <ClInclude Include="CDeviceAdd.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="CProxyEntry.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="CRoutingTableEntry.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ARP.cpp">
@@ -87,6 +93,12 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="CDeviceAdd.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="CProxyEntry.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="CRoutingTableEntry.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
