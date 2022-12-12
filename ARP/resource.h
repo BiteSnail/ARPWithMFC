@@ -8,6 +8,8 @@
 #define IDD_ARP_DIALOG                  102
 #define IDR_MAINFRAME                   128
 #define IDD_DIALOG_DEVICE_ADD           132
+#define IDD_DIALOG_ROUTING_TABLE        133
+#define IDD_DIALOG_PROXY_ENTRY          134
 #define IDC_IPADDRESS1                  1000
 #define IDC_IPADDRESS                   1000
 #define IDC_IPADDRESS_DST               1000
@@ -34,14 +36,27 @@
 #define IDC_BUTTON_G_ARP_SEND           1012
 #define IDC_IPADDRESS2                  1013
 #define IDC_IPADDRESS_SRC               1013
+#define IDC_BUTTON_ADD_PROXY_ENTRY      1014
+#define IDC_BUTTON_ADD_ROUTING_TABLE_ENTRY 1015
+#define IDC_IPADDRESS_ROUTING_DESTINATION 1015
+#define IDC_IPADDRESS_ROUTING_NETMASK   1016
+#define IDC_BUTTON_ADD_ROUTING_TABLE_ENTRY2 1016
+#define IDC_BUTTON_DEL_ROUTING_TABLE_ENTRY 1016
+#define IDC_IPADDRESS_ROUTING_GATEWAY   1017
+#define IDC_COMBO_ROUTING_INTERFACE     1018
+#define IDC_CHECK_ROUTING_UP            1019
+#define IDC_CHECK_ROUTING_DOWN          1020
+#define IDC_COMBO_PROXY_DEVICE_LIST     1020
+#define IDC_CHECK_ROUTING_HOST          1021
+#define IDC_LIST_STATIC_ROUTING_TABLE   1021
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        134
+#define _APS_NEXT_RESOURCE_VALUE        137
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1010
+#define _APS_NEXT_CONTROL_VALUE         1022
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
