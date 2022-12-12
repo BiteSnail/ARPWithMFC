@@ -110,8 +110,6 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int nlength) {
 	memset(broadcastAddr, 255, ENET_ADDR_SIZE);
 	
 	ARP_NODE newNode(ip_data->dstaddr, broadcastAddr);
-	m_ether->SetDestinAddress(broadcastAddr);
-	setOpcode(ARP_OPCODE_REQUEST);
 
 	if (memcmp(ip_data->srcaddr, ip_data->dstaddr, IP_ADDR_SIZE) != 0) {
 		//check given address is in arp cache table
@@ -129,12 +127,13 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int nlength) {
 			m_arpTable.push_back(newNode);
 		}
 	}
+	m_ether->SetDestinAddress(broadcastAddr);
+	m_ether->SetType(ETHER_ARP_TYPE);
+	setOpcode(ARP_OPCODE_REQUEST);
 	setSrcAddr(m_ether->GetSourceAddress(), ip_data->srcaddr);
 	setDstAddr(broadcastAddr, ip_data->dstaddr);
 
 	return ((CEthernetLayer*)mp_UnderLayer)->Send((unsigned char*)&m_sHeader, ARP_HEADER_SIZE);
-
-	return true;
 }
 
 BOOL CARPLayer::RSend(unsigned char* ppayload, int nlength, unsigned char* gatewayIP) {
@@ -144,6 +143,19 @@ BOOL CARPLayer::RSend(unsigned char* ppayload, int nlength, unsigned char* gatew
 	memset(broadcastAddr, 255, ENET_ADDR_SIZE);
 
 	ARP_NODE newNode(gatewayIP, broadcastAddr);
+
+	for (int i = 0; i < m_proxyTable.size(); i++) {
+		if (memcmp(m_proxyTable[i].protocol_addr, gatewayIP, IP_ADDR_SIZE) == 0)
+		{
+			//destination addr = m_proxyTAble[i].hardware_addr;
+		}
+	}
+
+
+
+
+
+
 	m_ether->SetDestinAddress(broadcastAddr);
 	setOpcode(ARP_OPCODE_REQUEST);
 
@@ -167,8 +179,6 @@ BOOL CARPLayer::RSend(unsigned char* ppayload, int nlength, unsigned char* gatew
 	setDstAddr(broadcastAddr, gatewayIP);
 
 	return ((CEthernetLayer*)mp_UnderLayer)->Send((unsigned char*)&m_sHeader, ARP_HEADER_SIZE);
-
-	return true;
 }
 
 
