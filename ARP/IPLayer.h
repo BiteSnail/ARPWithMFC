@@ -17,6 +17,7 @@ public:
     unsigned char* GetDestinAddress();
     unsigned char* GetSourceAddress();
     void            AddRouteTable(unsigned char* _destination_ip, unsigned char* _netmask, unsigned char* _gateway, unsigned char _flag, unsigned char interFace);
+    void            DelRouteTable(unsigned char index);
 
     bool LongestPrefix(unsigned char* a, unsigned char* b);
 
