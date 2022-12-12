@@ -61,20 +61,19 @@ BOOL CIPLayer::Receive(unsigned char* ppayload) {
 }
 
 void CIPLayer::AddRouteTable(unsigned char* _destination_ip, unsigned char* _netmask, unsigned char* _gateway, unsigned char _flag, unsigned char interFace) {
-    ROUTING_TABLE_NODE rt;
-    memcpy(&rt.destination_ip, _destination_ip, IP_ADDR_SIZE);
-    memcpy(&rt.netmask, _netmask, IP_ADDR_SIZE);
-    memcpy(&rt.gateway, _gateway, IP_ADDR_SIZE);
-    rt.flag = _flag;
-    rt._interface = interFace;
+    ROUTING_TABLE_NODE* rt = new ROUTING_TABLE_NODE;
+    memcpy(&rt->destination_ip, _destination_ip, IP_ADDR_SIZE);
+    memcpy(&rt->netmask, _netmask, IP_ADDR_SIZE);
+    memcpy(&rt->gateway, _gateway, IP_ADDR_SIZE);
+    rt->flag = _flag;
+    rt->_interface = interFace;
 
     //route_table list에서 새로운 열을 추가할 위치 찾기...
     std::list<ROUTING_TABLE_NODE>::iterator add_point = route_table.begin();
-    while (LongestPrefix(add_point->gateway, rt.gateway)) {
+    while (LongestPrefix(add_point->gateway, rt->gateway)) {
         add_point++;
     }
-    route_table.insert(add_point, rt);
-
+    route_table.insert(add_point, *rt);
 }
 
 void CIPLayer::DelRouteTable(unsigned char index) {
@@ -84,6 +83,27 @@ void CIPLayer::DelRouteTable(unsigned char index) {
     }
     route_table.erase(del_point);
 }
+
+void CIPLayer::SetDefaultGateway(unsigned char* _gateway, unsigned char _flag, unsigned char interFace) {
+    unsigned char zero[IP_ADDR_SIZE];              //비교 기준 만들기 
+    memset(zero, 0, IP_ADDR_SIZE);                 //Destination_IP: '0.0.0.0' 확인용 값
+    
+    if (!memcmp(route_table.back().destination_ip, zero, IP_ADDR_SIZE)) {       //기존 defaultgateway가 list node로 존재할 경우
+        memcpy(&route_table.back().gateway, _gateway, IP_ADDR_SIZE);
+        route_table.back().flag = _flag;
+        route_table.back()._interface = interFace;
+    }
+    else {
+        ROUTING_TABLE_NODE* tmp = new ROUTING_TABLE_NODE;
+        memset(&tmp->destination_ip, 0, IP_ADDR_SIZE);
+        memset(&tmp->netmask, 0, IP_ADDR_SIZE);
+        memcpy(&tmp->gateway, _gateway, IP_ADDR_SIZE);
+        tmp->flag = _flag;
+        tmp->_interface = interFace;
+    
+        route_table.push_back(*tmp);
+    }
+ }
 
 bool CIPLayer::LongestPrefix(unsigned char* a, unsigned char* b) {
     for (int i = 0; i < 4; i++) {
