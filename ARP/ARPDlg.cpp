@@ -232,6 +232,25 @@ void CARPDlg::SetComboBox()
 	m_NILayer->SetAdapterComboBox(m_ComboxAdapter);
 }
 
+void CARPDlg::SetPosition(CDialogEx& dlg, int IDD_dlg)
+{
+	CRect Mainrect;
+	CRect Rect;
+	GetClientRect(&Mainrect);
+	CPoint pos;
+	pos.x = GetSystemMetrics(SM_CXSCREEN) / 2.0f - Mainrect.Width() / 2.0f;
+	pos.y = GetSystemMetrics(SM_CYSCREEN) / 2.0f - Mainrect.Height() / 2.0f;;
+
+	dlg.Create(IDD_dlg, this);
+	dlg.ShowWindow(SW_HIDE);
+	dlg.GetClientRect(&Rect);
+	dlg.SetWindowPos(NULL, pos.x + (Rect.Width() / 2), pos.y + (Rect.Height() / 2), 0, 0, SWP_NOSIZE);
+}
+
+bool CARPDlg::bgetMACaddrInARP(unsigned char* IP, unsigned char* MAC)
+{
+	return m_ARPLayer->getMACinARP(IP, MAC);
+}
 
 void CARPDlg::InitFn()
 {
@@ -255,29 +274,9 @@ void CARPDlg::InitFn()
 	//
 	// 
 	//--------------------------------------------------------------------------------------
-	CRect Mainrect;
-	CRect Rect;
-	GetClientRect(&Mainrect);
-	CPoint pos;
-	pos.x = GetSystemMetrics(SM_CXSCREEN) / 2.0f - Mainrect.Width() / 2.0f;
-	pos.y = GetSystemMetrics(SM_CYSCREEN) / 2.0f - Mainrect.Height() / 2.0f;;
-
-	mDeviceAddDlg.Create(IDD_DIALOG_DEVICE_ADD, this);
-	mDeviceAddDlg.ShowWindow(SW_HIDE);
-	mDeviceAddDlg.GetClientRect(&Rect);
-	mDeviceAddDlg.SetWindowPos(NULL, pos.x - (Rect.Width() / 2), pos.y - (Rect.Height() / 2),0,0,SWP_NOSIZE);
-
-
-	mProxyEntryDlg.Create(IDD_DIALOG_PROXY_ENTRY, this);
-	mProxyEntryDlg.ShowWindow(SW_HIDE);
-	mProxyEntryDlg.GetClientRect(&Rect);
-	mProxyEntryDlg.SetWindowPos(NULL, pos.x - (Rect.Width() / 2), pos.y - (Rect.Height() / 2), 0, 0, SWP_NOSIZE);
-
-	mRoutingTabledlg.Create(IDD_DIALOG_ROUTING_TABLE, this);
-	mRoutingTabledlg.ShowWindow(SW_HIDE);
-	mRoutingTabledlg.GetClientRect(&Rect);
-	mRoutingTabledlg.SetWindowPos(NULL, pos.x - (Rect.Width() / 2), pos.y - (Rect.Height() / 2), 0, 0, SWP_NOSIZE);
-	
+	SetPosition(mDeviceAddDlg, IDD_DIALOG_DEVICE_ADD);
+	SetPosition(mProxyEntryDlg, IDD_DIALOG_PROXY_ENTRY);
+	SetPosition(mRoutingTabledlg, IDD_DIALOG_ROUTING_TABLE);
 }
 
 void CARPDlg::AddProxyArpCache(const int _index, unsigned char* ip, unsigned char* addr)
