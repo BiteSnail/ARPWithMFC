@@ -56,15 +56,14 @@ BOOL CEthernetLayer::Send(unsigned char* ppayload, int nlength)
 {
 	// 윗 계층에서 받은 App 계층의 Frame 길이만큼을 Ethernet계층의 data로 넣는다.
 	memcpy(m_sHeader.enet_data, ppayload, nlength);
-	// 윗 계층에서 받은 type 또한 헤더에 포함시킨다.
-	//memset(m_sHeader.enet_dstaddr, 255, 6);
-	m_sHeader.enet_type = ETHER_ARP_TYPE;
 	BOOL bSuccess = FALSE;
-
-		// Ethernet Data + Ethernet Header의 사이즈를 합한 크기만큼의 Ethernet Frame을
-		// File 계층으로 보낸다.
 	bSuccess = this->GetUnderLayer()->Send((unsigned char*)&m_sHeader, ETHER_HEADER_SIZE + nlength);
 	return bSuccess;
+}
+
+void CEthernetLayer::SetType(unsigned short type)
+{
+	m_sHeader.enet_type = type;
 }
 
 BOOL CEthernetLayer::Receive(unsigned char* ppayload)
