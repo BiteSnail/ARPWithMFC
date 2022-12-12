@@ -77,12 +77,13 @@ void CIPLayer::AddRouteTable(unsigned char* _destination_ip, unsigned char* _net
 
 }
 
-void CIPLayer::AddRouteTable(unsigned char index) {
+void CIPLayer::DelRouteTable(unsigned char index) {
     std::list<ROUTING_TABLE_NODE>::iterator del_point = route_table.begin();
-    for(int i = 0; i < int(index) - 1; i++){
+    for (int i = 0; i < int(index) - 1; i++) {
         del_point++;
     }
-    route_table.earse(del_point);
+    route_table.erase(del_point);
+}
 
 bool CIPLayer::LongestPrefix(unsigned char* a, unsigned char* b) {
     for (int i = 0; i < 4; i++) {

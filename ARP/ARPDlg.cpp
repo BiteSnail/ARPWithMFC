@@ -275,7 +275,6 @@ void CARPDlg::InitFn()
 	// 
 	//--------------------------------------------------------------------------------------
 	SetPosition(mDeviceAddDlg, IDD_DIALOG_DEVICE_ADD);
-	SetPosition(mProxyEntryDlg, IDD_DIALOG_PROXY_ENTRY);
 	SetPosition(mRoutingTabledlg, IDD_DIALOG_ROUTING_TABLE);
 }
 
@@ -499,8 +498,6 @@ void CARPDlg::OnBnClickedButtonAddRoutingTableEntry()
 void CARPDlg::OnBnClickedButtonAddProxyEntry()
 {
 	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	//mProxyEntryDlg.InitDeviceAddDlg(m_ComboxAdapter.GetCurSel());
-	mProxyEntryDlg.ShowWindow(SW_SHOW);
 }
 
 

@@ -6,7 +6,6 @@
 
 #include "BaseLayer.h"
 #include "CDeviceAdd.h"
-#include "CProxyEntry.h"
 #include "CRoutingTableEntry.h"
 // CARPDlg 대화 상자
 class CARPDlg : public CDialogEx, public CBaseLayer
@@ -54,7 +53,7 @@ public:
 	CEdit			m_editHWAddr;
 	CEdit			m_editSrcHwAddr;
 	CDeviceAdd		mDeviceAddDlg;
-	CProxyEntry     mProxyEntryDlg;
+//	CProxyEntry     mProxyEntryDlg;
 	CRoutingTableEntry mRoutingTabledlg;
 public:
 	void InitFn();
