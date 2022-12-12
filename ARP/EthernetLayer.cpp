@@ -73,6 +73,10 @@ BOOL CEthernetLayer::Receive(unsigned char* ppayload)
 
 	unsigned char broad[6] = { 255, 255, 255, 255, 255, 255 };
 
+	if (memcmp(pFrame->enet_srcaddr, m_sHeader.enet_srcaddr, ENET_ADDR_SIZE) == 0) {
+		return FALSE;
+	}
+
 	BOOL bSuccess = FALSE;
 	if(memcmp(pFrame->enet_dstaddr, m_sHeader.enet_srcaddr, sizeof(m_sHeader.enet_srcaddr))==0){//주소 확인
 			// enet_type을 기준으로 Ethernet Frame의 data를 넘겨줄 레이어를 지정한다.
