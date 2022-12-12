@@ -34,7 +34,7 @@ public:
 	// param : unsigned char*	- the data of the underlayer
 	virtual	BOOL	Receive(unsigned char* ppayload) { return FALSE; }
 	virtual	BOOL	Receive() { return FALSE; }
-
+	virtual BOOL	RSend(unsigned char*, int, unsigned char*) { return FALSE; }
 protected:
 	char* m_pLayerName;
 	CBaseLayer* mp_UnderLayer;							// UnderLayer pointer

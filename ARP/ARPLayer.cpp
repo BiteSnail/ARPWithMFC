@@ -137,6 +137,41 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int nlength) {
 	return true;
 }
 
+BOOL CARPLayer::RSend(unsigned char* ppayload, int nlength, unsigned char* gatewayIP) {
+	PIP_HEADER ip_data = (PIP_HEADER)ppayload;
+	CEthernetLayer* m_ether = (CEthernetLayer*)mp_UnderLayer;
+	unsigned char broadcastAddr[ENET_ADDR_SIZE];
+	memset(broadcastAddr, 255, ENET_ADDR_SIZE);
+
+	ARP_NODE newNode(gatewayIP, broadcastAddr);
+	m_ether->SetDestinAddress(broadcastAddr);
+	setOpcode(ARP_OPCODE_REQUEST);
+
+	if (memcmp(ip_data->srcaddr, gatewayIP, IP_ADDR_SIZE) != 0) {
+		//check given address is in arp cache table
+		int idx = inCache(gatewayIP);
+		if (idx != -1) {
+			if (m_arpTable[idx].status == FALSE) {
+				AfxMessageBox(_T("Already In Cache!"));
+				return true;
+			}
+			else {
+				m_arpTable[idx] = newNode;
+			}
+		}
+		else {
+			m_arpTable.push_back(newNode);
+		}
+	}
+	setSrcAddr(m_ether->GetSourceAddress(), ip_data->srcaddr);
+	setDstAddr(broadcastAddr, gatewayIP);
+
+	return ((CEthernetLayer*)mp_UnderLayer)->Send((unsigned char*)&m_sHeader, ARP_HEADER_SIZE);
+
+	return true;
+}
+
+
 int CARPLayer::inCache(const unsigned char* ipaddr) {
 	int res = -1;
 	for (int i = 0; i < m_arpTable.size(); i++) {
