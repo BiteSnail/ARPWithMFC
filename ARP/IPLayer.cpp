@@ -69,7 +69,7 @@ BOOL CIPLayer::Receive(unsigned char* ppayload) {
     //m_sHeader 변수 값 채우기
     memcpy(m_sHeader.ip_data, pFrame->ip_data, IP_MAX_DATA_SIZE);       
     SetHeaderFields(ppayload);
-
+    
     Routing(pFrame->ip_dstaddr, ppayload);
     return bSuccess;
 }
@@ -127,18 +127,21 @@ bool CIPLayer::LongestPrefix(unsigned char* a, unsigned char* b) {
 }
 
 void CIPLayer::Routing(unsigned char* dest_ip, unsigned char* ppayload) {
-    unsigned char masked[IP_ADDR_SIZE];
+    PIP_HEADER pFrame = (PIP_HEADER)ppayload;
+    unsigned char masked[IP_ADDR_SIZE] = { 0, };
 
     for each (ROUTING_TABLE_NODE row in route_table) {       //table에서 한 열씩 뽑아...
         for (int i = 0; i < IP_ADDR_SIZE; i++)masked[i] = dest_ip[i] & row.netmask[i];        //마스킹 해보고
-        if (!memcmp(masked, row.destination_ip, IP_ADDR_SIZE)) {       //IP addr의 결과가 같다면,
-            if ((row.flag & IP_ROUTE_UP) == IP_ROUTE_UP && (row.flag & IP_ROUTE_HOST) == IP_ROUTE_HOST) {    
-                Send(ppayload, sizeof(ppayload));
+        if (memcmp(masked, row.destination_ip, IP_ADDR_SIZE)==0) {       //IP addr의 결과가 같다면,
+            if ((row.flag & IP_ROUTE_UP) && (row.flag & IP_ROUTE_HOST)) {    
+                Send(ppayload, pFrame->tlength);
             }
-            else if ((row.flag & IP_ROUTE_UP) == IP_ROUTE_UP && (row.flag & IP_ROUTE_GATEWAY) == IP_ROUTE_GATEWAY) {
-                RSend(ppayload, sizeof(ppayload), row.gateway); //Gateway IP의 MAC address를 얻기 위해...
+            else if ((row.flag & IP_ROUTE_UP)&& (row.flag & IP_ROUTE_GATEWAY)) {
+                RSend(ppayload, pFrame->tlength, row.gateway); //Gateway IP의 MAC address를 얻기 위해...
             }
+            return;
         }
     }
+    //TODO default gateway로 가는 것 만들기
 
 }
