@@ -7,16 +7,6 @@
 
 CIPLayer::CIPLayer(char* pName) : CBaseLayer(pName) {
     ResetHeader();
-    m_sHeader.ver_hlegnth = 0x45;
-    m_sHeader.tos = 0x00;
-    m_sHeader.tlength = 0xffff;
-
-    m_sHeader.id = 0x0000;
-    m_sHeader.offset = 0x00;
-
-    m_sHeader.ttl = 0xff;
-    m_sHeader.ptype = 0x06;         //<- tcp number. icmp number로 나중에 수정 필요
-    m_sHeader.checksum = 0x0000;
  }
 
 CIPLayer::~CIPLayer() {
@@ -35,6 +25,7 @@ void CIPLayer::SetHeaderFields(unsigned char* ppayload){
     memcpy(&m_sHeader.tlength, &pFrame->tlength, 2);
     memcpy(&m_sHeader.id, &pFrame->id, 2);
     memcpy(&m_sHeader.ttl, &pFrame->ttl, 1);
+    m_sHeader.ttl = m_sHeader.ttl - 1;        //ttl 감소시키는 것
     memcpy(&m_sHeader.ptype, &pFrame->ptype, 1);
     memcpy(&m_sHeader.checksum, &pFrame->checksum, 2);
     SetSourceAddress(pFrame->ip_srcaddr);
@@ -58,14 +49,12 @@ void CIPLayer::SetDestinAddress(unsigned char* pAddress) {
 }
 //UpperLayer = AppLayer, UnderLayer = ARPLayer?
 BOOL CIPLayer::Send(unsigned char* ppayload, int nlength) {
-    memcpy(m_sHeader.ip_data, ppayload, nlength);
     BOOL bSuccess = FALSE;
     bSuccess = this->GetUnderLayer()->Send((unsigned char*)&m_sHeader, IP_HEADER_SIZE + nlength);
     return bSuccess;
 }
 
 BOOL CIPLayer::RSend(unsigned char* ppayload, int nlength, unsigned char* gatewayIP) {
-    memcpy(m_sHeader.ip_data, ppayload, nlength);
     BOOL bSuccess = FALSE;
     bSuccess = this->GetUnderLayer()->RSend((unsigned char*)&m_sHeader, IP_HEADER_SIZE + nlength, gatewayIP);
     return bSuccess;
@@ -76,6 +65,9 @@ BOOL CIPLayer::Receive(unsigned char* ppayload) {
     //변경된 Receive 함수
     BOOL bSuccess = FALSE;
     PIP_HEADER pFrame = (PIP_HEADER)ppayload;
+    
+    //m_sHeader 변수 값 채우기
+    memcpy(m_sHeader.ip_data, pFrame->ip_data, IP_MAX_DATA_SIZE);       
     SetHeaderFields(ppayload);
 
     Routing(pFrame->ip_dstaddr, ppayload);
