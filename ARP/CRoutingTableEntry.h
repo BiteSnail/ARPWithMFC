@@ -31,7 +31,6 @@ public:
 	CButton m_RoutingCheckHost;
 
 	CComboBox m_RoutingInterface;
-	void AddRoutingTable(const int _index, unsigned char* ip, unsigned char* addr);
 	virtual BOOL OnInitDialog();
 	afx_msg void OnBnClickedOk();
 };
