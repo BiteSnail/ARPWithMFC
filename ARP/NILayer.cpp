@@ -57,9 +57,9 @@ CNILayer::~CNILayer() {
 	delete(OidData);
 }
 
-BOOL CNILayer::Receive(unsigned char* pkt) {
+BOOL CNILayer::Receive(unsigned char* pkt, int iosel) {
 	if (pkt == nullptr) return FALSE;
-	if (!(mp_aUpperLayer[0]->Receive(pkt))) return FALSE;
+	if (!(mp_aUpperLayer[0]->Receive(pkt, iosel))) return FALSE;
 	return TRUE;
 }
 
@@ -155,34 +155,20 @@ void CNILayer::GetIPAddress(CString& ipv4addr, CString& ipv6addr, const int iose
 	}
 }
 
-UINT CNILayer::ThreadFunction_RECEIVE_INNER(LPVOID pParam) {
-	struct pcap_pkthdr* header;
-	const u_char* pkt_data;
+UINT CNILayer::ThreadFunction_RECEIVE(LPVOID pParam) {
+	struct pcap_pkthdr* header[2];
+	const u_char* pkt_data[2];
 	CNILayer* pNI = (CNILayer*)pParam;
 	int result = 1;
 
 	while (pNI->canRead){
-		result = pcap_next_ex(pNI->m_AdapterObject[INNER], &header, &pkt_data);
+		result = pcap_next_ex(pNI->m_AdapterObject[INNER], &header[INNER], &pkt_data[INNER]);
+		result = pcap_next_ex(pNI->m_AdapterObject[OUTER], &header[OUTER], &pkt_data[OUTER]);
 		if (result == 1) {
-			memcpy(pNI->data, pkt_data, ETHER_MAX_SIZE);
-			pNI->Receive(pNI->data[INNER]);
-		}
-	}
-	return 0;
-}
-
-UINT CNILayer::ThreadFunction_RECEIVE_OUTER(LPVOID pParam)
-{
-	struct pcap_pkthdr* header;
-	const u_char* pkt_data;
-	CNILayer* pNI = (CNILayer*)pParam;
-	int result = 1;
-
-	while (pNI->canRead) {
-		result = pcap_next_ex(pNI->m_AdapterObject[INNER], &header, &pkt_data);
-		if (result == 1) {
-			memcpy(pNI->data, pkt_data, ETHER_MAX_SIZE);
-			pNI->Receive(pNI->data[OUTER]);
+			memcpy(pNI->data[INNER], pkt_data[INNER], ETHER_MAX_SIZE);
+			pNI->Receive(pNI->data[INNER], INNER);
+			memcpy(pNI->data[OUTER], pkt_data[OUTER], ETHER_MAX_SIZE);
+			pNI->Receive(pNI->data[OUTER], OUTER);
 		}
 	}
 	return 0;

@@ -17,7 +17,7 @@ class CNILayer :
 public:
     CNILayer(char* pName);
     virtual ~CNILayer();
-    virtual BOOL    Receive(unsigned char* pkt) override;
+    virtual BOOL    Receive(unsigned char* pkt, int iosel) override;
     virtual BOOL    Send(unsigned char* ppayload, int nlength, int iosel) override;
     //from index number, return MAC ADDRESS
     UCHAR*          SetAdapter(const int index, const int iosel); 
@@ -31,8 +31,7 @@ public:
     */
     void            GetIPAddress(CString& ipv4addr, CString& ipv6addr, const int index, bool isIOsel);
     //if canread is True Thread activate
-    static UINT     ThreadFunction_RECEIVE_INNER(LPVOID pParam);
-    static UINT     ThreadFunction_RECEIVE_OUTER(LPVOID pParam);
+    static UINT     ThreadFunction_RECEIVE(LPVOID pParam);
     //set canread option reverse
     void Receiveflip();
 protected:
