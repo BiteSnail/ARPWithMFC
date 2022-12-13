@@ -197,7 +197,6 @@
     <ClInclude Include="ARPLayer.h" />
     <ClInclude Include="BaseLayer.h" />
     <ClInclude Include="CDeviceAdd.h" />
-    <ClInclude Include="CProxyEntry.h" />
     <ClInclude Include="CRoutingTableEntry.h" />
     <ClInclude Include="EthernetLayer.h" />
     <ClInclude Include="framework.h" />
@@ -215,7 +214,6 @@
     <ClCompile Include="ARPLayer.cpp" />
     <ClCompile Include="BaseLayer.cpp" />
     <ClCompile Include="CDeviceAdd.cpp" />
-    <ClCompile Include="CProxyEntry.cpp" />
     <ClCompile Include="CRoutingTableEntry.cpp" />
     <ClCompile Include="EthernetLayer.cpp" />
     <ClCompile Include="IPLayer.cpp" />

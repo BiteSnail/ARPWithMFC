@@ -12,20 +12,23 @@ class CARPLayer :
 private:
     inline void     ResetHeader();
 public:
-    BOOL            Receive(unsigned char* ppayload);
-    BOOL            Send(unsigned char* ppayload, int nlength);
-    int             inCache(const unsigned char* ipaddr);
+    BOOL            Receive(unsigned char* ppayload, int iosel);
+    BOOL            Send(unsigned char* ppayload, int nlength, int iosel);
+    BOOL            RSend(unsigned char* ppayload, int nlength, unsigned char* gatewayIP, int iosel);
+    int             inCache(const unsigned char* ipaddr); //없으면 -1 있으면 해당 인덱스 반환
     void            setType(const unsigned short htype, const unsigned short ptype);
     void            setOpcode(const unsigned short opcode);
     void            setSrcAddr(const unsigned char enetAddr[], const unsigned char ipAddr[]);
     void            setDstAddr(const unsigned char enetAddr[], const unsigned char ipAddr[]);
     void            swapaddr(unsigned char lAddr[], unsigned char rAddr[], const unsigned char size);
     void            updateTable();
-    void            setmyAddr(CString MAC, CString IP);
+    void            setmyAddr(CString MAC, CString IP, int iosel);
     void            deleteItem(CString IP);
     void            clearTable();
     void            createProxy(unsigned char *src, unsigned char* ip, unsigned char* enet);
     void            deleteProxy(const int index);
+    bool            getMACinARP(unsigned char* dstIP, unsigned char* MAC);
+    void            Wait(DWORD dwMillisecond);
     CARPLayer(char* pName);
     virtual ~CARPLayer();
 
@@ -90,8 +93,8 @@ public:
     std::vector<ARP_NODE> getTable();
 
 protected:
-    unsigned char myip[IP_ADDR_SIZE];
-    unsigned char mymac[ENET_ADDR_SIZE];
+    unsigned char myip[2][IP_ADDR_SIZE];
+    unsigned char mymac[2][ENET_ADDR_SIZE];
     ARP_HEADER m_sHeader;
     std::vector<ARP_NODE> m_arpTable;
     std::vector<PROXY_ARP_NODE> m_proxyTable;

@@ -24,13 +24,24 @@ inline void CARPLayer::ResetHeader() {
 	m_sHeader = ARP_HEADER();
 }
 
-BOOL CARPLayer::Receive(unsigned char* ppayload) {
+bool CARPLayer::getMACinARP(unsigned char* dstIP, unsigned char* MAC)
+{
+	int index = inCache(dstIP);
+	bool isfound = FALSE;
+	if (index != -1) {
+		memcpy(MAC, m_arpTable[index].hardware_addr, ENET_ADDR_SIZE);
+		isfound = TRUE;
+	}
+	return isfound;
+}
+
+BOOL CARPLayer::Receive(unsigned char* ppayload, int iosel) {
 	PARP_HEADER arp_data = (PARP_HEADER)ppayload;
 	CEthernetLayer* m_ether = (CEthernetLayer*)mp_UnderLayer;
 	int index = inCache(arp_data->hardware_srcaddr);
 
 	if (memcmp(myip, arp_data->protocol_srcaddr, IP_ADDR_SIZE) == 0) {
-		return FALSE;
+		//return FALSE;
 	}
 
 	switch (arp_data->opercode) {
@@ -51,8 +62,8 @@ BOOL CARPLayer::Receive(unsigned char* ppayload) {
 			swapaddr(arp_data->hardware_srcaddr, arp_data->hardware_dstaddr, ENET_ADDR_SIZE);
 			swapaddr(arp_data->protocol_srcaddr, arp_data->protocol_dstaddr, IP_ADDR_SIZE);
 
-			m_ether->SetDestinAddress(arp_data->hardware_dstaddr);
-			return mp_UnderLayer->Send((unsigned char*)arp_data, ARP_HEADER_SIZE);
+			m_ether->SetDestinAddress(arp_data->hardware_dstaddr, iosel);
+			return mp_UnderLayer->Send((unsigned char*)arp_data, ARP_HEADER_SIZE, iosel);
 		}
 		//만약 request의 dst ip가 나의 ip가 아닌 경우 proxy table 확인 후 등록된 정보가 있다면 reply
 		else {
@@ -64,8 +75,8 @@ BOOL CARPLayer::Receive(unsigned char* ppayload) {
 					swapaddr(arp_data->hardware_srcaddr, arp_data->hardware_dstaddr, ENET_ADDR_SIZE);
 					swapaddr(arp_data->protocol_srcaddr, arp_data->protocol_dstaddr, IP_ADDR_SIZE);
 
-					m_ether->SetDestinAddress(arp_data->hardware_dstaddr);
-					return mp_UnderLayer->Send((unsigned char*)arp_data, ARP_HEADER_SIZE);
+					m_ether->SetDestinAddress(arp_data->hardware_dstaddr, iosel);
+					return mp_UnderLayer->Send((unsigned char*)arp_data, ARP_HEADER_SIZE, iosel);
 				}
 			}
 		}
@@ -92,39 +103,90 @@ BOOL CARPLayer::Receive(unsigned char* ppayload) {
 	return true;
 }
 
-BOOL CARPLayer::Send(unsigned char* ppayload, int nlength) {
+BOOL CARPLayer::Send(unsigned char* ppayload, int nlength, int iosel) {
 	PIP_HEADER ip_data = (PIP_HEADER)ppayload;
 	CEthernetLayer* m_ether = (CEthernetLayer*)mp_UnderLayer;
 	unsigned char broadcastAddr[ENET_ADDR_SIZE];
 	memset(broadcastAddr, 255, ENET_ADDR_SIZE);
 	
 	ARP_NODE newNode(ip_data->dstaddr, broadcastAddr);
-	m_ether->SetDestinAddress(broadcastAddr);
-	setOpcode(ARP_OPCODE_REQUEST);
 
 	if (memcmp(ip_data->srcaddr, ip_data->dstaddr, IP_ADDR_SIZE) != 0) {
 		//check given address is in arp cache table
 		int idx = inCache(ip_data->dstaddr);
 		if (idx != -1) {
-			if (m_arpTable[idx].status == FALSE) {
-				AfxMessageBox(_T("Already In Cache!"));
-				return true;
-			}
-			else {
-				m_arpTable[idx] = newNode;
-			}
+			m_arpTable[idx] = newNode;
 		}
 		else {
 			m_arpTable.push_back(newNode);
 		}
 	}
-	setSrcAddr(m_ether->GetSourceAddress(), ip_data->srcaddr);
+	m_ether->SetDestinAddress(broadcastAddr, iosel);
+	m_ether->SetType(ETHER_ARP_TYPE, iosel);
+	setOpcode(ARP_OPCODE_REQUEST);
+	setSrcAddr(m_ether->GetSourceAddress(iosel), ip_data->srcaddr);
 	setDstAddr(broadcastAddr, ip_data->dstaddr);
 
-	return ((CEthernetLayer*)mp_UnderLayer)->Send((unsigned char*)&m_sHeader, ARP_HEADER_SIZE);
-
-	return true;
+	return mp_UnderLayer->Send((unsigned char*)&m_sHeader, ARP_HEADER_SIZE, iosel);
 }
+
+void CARPLayer::Wait(DWORD dwMillisecond)
+{
+	MSG msg;
+	DWORD dwStart;
+	dwStart = GetTickCount();
+
+	while (GetTickCount() - dwStart < dwMillisecond)
+	{
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+	}
+}
+
+BOOL CARPLayer::RSend(unsigned char* ppayload, int nlength, unsigned char* gatewayIP, int iosel) {
+	PIP_HEADER ip_data = (PIP_HEADER)ppayload;
+	CEthernetLayer* m_ether = (CEthernetLayer*)mp_UnderLayer;
+	int idx = 0;
+
+	//proxy테이블에 있다면 그쪽으로 바로 보내줌
+	for (int i = 0; i < m_proxyTable.size(); i++) {
+		if (memcmp(m_proxyTable[i].protocol_addr, gatewayIP, IP_ADDR_SIZE) == 0)
+		{
+			m_ether->SetDestinAddress(m_proxyTable[i].hardware_addr, iosel);
+			m_ether->SetType(ETHER_IP_TYPE, iosel);
+			return mp_UnderLayer->Send(ppayload, nlength, iosel);
+		}
+	}
+
+	//proxy table에 없다면 arp table 찾아보기
+	idx = inCache(gatewayIP);
+	if (idx == -1) {
+		//arp table에도 없으면 해당 ip주소로 arp request 날려보기
+		UCHAR temp[IP_ADDR_SIZE] = { 0, };
+		memcpy(temp, ip_data->dstaddr, IP_ADDR_SIZE);
+		memcpy(ip_data->dstaddr, gatewayIP, IP_ADDR_SIZE);
+		Send(ppayload, nlength, iosel);
+		memcpy(ip_data->dstaddr, temp, IP_ADDR_SIZE);
+		
+		Wait(3000);
+		
+		//TODO arp reply 받으면 그쪽으로 다시 보내주기
+		idx = inCache(gatewayIP);
+		if (idx == -1) {
+			return FALSE;
+		}
+	}
+	
+	//arp table에 있으면 해당 주소로 보내줌
+	m_ether->SetDestinAddress(m_arpTable[idx].hardware_addr, iosel);
+	m_ether->SetType(ETHER_IP_TYPE, iosel);
+	return mp_UnderLayer->Send(ppayload, nlength, iosel);
+	
+}
+
 
 int CARPLayer::inCache(const unsigned char* ipaddr) {
 	int res = -1;
@@ -137,9 +199,9 @@ int CARPLayer::inCache(const unsigned char* ipaddr) {
 	return res;
 }
 
-void CARPLayer::setmyAddr(CString MAC, CString IP) {
-	StrToaddr(ARP_IP_TYPE, myip, IP);
-	StrToaddr(ARP_ENET_TYPE, mymac, MAC);
+void CARPLayer::setmyAddr(CString MAC, CString IP, int iosel) {
+	StrToaddr(ARP_IP_TYPE, myip[iosel], IP);
+	StrToaddr(ARP_ENET_TYPE, mymac[iosel], MAC);
 }
 
 void CARPLayer::setType(const unsigned short htype, const unsigned short ptype) {

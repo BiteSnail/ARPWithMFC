@@ -45,7 +45,6 @@ BOOL CDeviceAdd::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	// TODO:  여기에 추가 초기화 작업을 추가합니다.
 	SetAdapterList();
 
 	return TRUE;  // return TRUE unless you set the focus to a control
@@ -83,7 +82,6 @@ void CDeviceAdd::UctoS(UCHAR* src, CString& dst)
 
 void CDeviceAdd::OnBnClickedOk()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	CString mMAC;
 	UCHAR ip[IP_ADDR_SIZE] = { 0, };
 	UCHAR mac[ENET_ADDR_SIZE] = { 0, };
@@ -102,14 +100,12 @@ void CDeviceAdd::OnBnClickedOk()
 
 void CDeviceAdd::OnBnClickedCancel()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	CDialogEx::OnCancel();
 }
 
 
 void CDeviceAdd::OnCbnCloseupComboDeviceList()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	//int nIndex = m_DeviceList.GetCurSel();
 	//memcpy(m_ucSrcAddr, theApp.MainDlg->m_Network->SetAdapter(nIndex), 6);
 
@@ -120,7 +116,6 @@ void CDeviceAdd::OnCbnCloseupComboDeviceList()
 
 void CDeviceAdd::OnCbnSelchangeComboDeviceList()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	//CString IPv4, IPv6;
 	//theApp.MainDlg->m_NILayer->GetIPAddress(IPv4, IPv6, m_DeviceList.GetCurSel());
 	//m_IPADDRESS_DEVICE_ADD.SetWindowTextW(IPv4);

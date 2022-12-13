@@ -16,16 +16,17 @@ class CEthernetLayer
 	: public CBaseLayer
 {
 private:
-	inline void		ResetHeader();
+	inline void		ResetHeader(int iosel);
 
 public:
-	BOOL			Receive(unsigned char* ppayload);
+	BOOL			Receive(unsigned char* ppayload, int iosel);
     //수신받은 패킷의 Destination MAC ADDRESS가 현재 프로세스의 MAC_ADDRESS가 맞을 경우 상위 레이어로 이동 만약 아니라면 receive 종료
-	BOOL			Send(unsigned char* ppayload, int nlength);
-	void			SetDestinAddress(unsigned char* pAddress);
-	void			SetSourceAddress(unsigned char* pAddress);
-	unsigned char* GetDestinAddress();
-	unsigned char* GetSourceAddress();
+	BOOL			Send(unsigned char* ppayload, int nlength, int iosel);
+	void			SetDestinAddress(unsigned char* pAddress, int iosel);
+	void			SetSourceAddress(unsigned char* pAddress, int iosel);
+	unsigned char* GetDestinAddress(int iosel);
+	unsigned char* GetSourceAddress(int iosel);
+	void			SetType(unsigned short type, int iosel);
 
 	CEthernetLayer(char* pName);
 	virtual ~CEthernetLayer();
@@ -40,7 +41,7 @@ public:
 	} ETHERNET_HEADER, * PETHERNET_HEADER;
 
 protected:
-	ETHERNET_HEADER	m_sHeader;
+	ETHERNET_HEADER	m_sHeader[2];
 };
 
 #endif // !defined(AFX_ETHERNETLAYER_H__7857C9C2_B459_4DC8_B9B3_4E6C8B587B29__INCLUDED_)

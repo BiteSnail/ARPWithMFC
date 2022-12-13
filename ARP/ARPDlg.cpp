@@ -93,7 +93,10 @@ void CARPDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT_MACADDR, m_editSrcHwAddr);
 	DDX_Control(pDX, IDC_COMBO_ADAPTER, m_ComboxAdapter);
 	DDX_Control(pDX, IDC_LIST_STATIC_ROUTING_TABLE, m_ListStaticRoutingTable);
-	
+
+	DDX_Control(pDX, IDC_EDIT_MACADDR2, m_editSrcHwAddr2);
+	DDX_Control(pDX, IDC_IPADDRESS_SRC2, m_SrcIPADDRESS2);
+	DDX_Control(pDX, IDC_COMBO_ADAPTER2, m_ComboxAdapter2);
 }
 
 BEGIN_MESSAGE_MAP(CARPDlg, CDialogEx)
@@ -112,6 +115,7 @@ BEGIN_MESSAGE_MAP(CARPDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_ADD_PROXY_ENTRY, &CARPDlg::OnBnClickedButtonAddProxyEntry)
 	ON_BN_CLICKED(IDC_BUTTON_ADD_ROUTING_TABLE_ENTRY, &CARPDlg::OnBnClickedButtonAddRoutingTableEntry)
 	ON_BN_CLICKED(IDC_BUTTON_DEL_ROUTING_TABLE_ENTRY, &CARPDlg::OnBnClickedButtonDelRoutingTableEntry)
+	ON_CBN_SELCHANGE(IDC_COMBO_ADAPTER2, &CARPDlg::OnCbnSelchangeComboAdapter2)
 END_MESSAGE_MAP()
 
 
@@ -149,7 +153,7 @@ BOOL CARPDlg::OnInitDialog()
 	theApp.MainDlg = (CARPDlg*)AfxGetApp()->m_pMainWnd;
 
 
-	// TODO: 여기에 추가 초기화 작업을 추가합니다.
+	//초기화
 	SetTable();
 	SetComboBox();
 	InitFn();
@@ -230,8 +234,28 @@ void CARPDlg::SetTable()
 void CARPDlg::SetComboBox()
 {
 	m_NILayer->SetAdapterComboBox(m_ComboxAdapter);
+	m_NILayer->SetAdapterComboBox(m_ComboxAdapter2);
 }
 
+void CARPDlg::SetPosition(CDialogEx& dlg, int IDD_dlg)
+{
+	CRect Mainrect;
+	CRect Rect;
+	GetClientRect(&Mainrect);
+	CPoint pos;
+	pos.x = GetSystemMetrics(SM_CXSCREEN) / 2.0f - Mainrect.Width() / 2.0f;
+	pos.y = GetSystemMetrics(SM_CYSCREEN) / 2.0f - Mainrect.Height() / 2.0f;;
+
+	dlg.Create(IDD_dlg, this);
+	dlg.ShowWindow(SW_HIDE);
+	dlg.GetClientRect(&Rect);
+	dlg.SetWindowPos(NULL, pos.x + (Rect.Width() / 2), pos.y + (Rect.Height() / 2), 0, 0, SWP_NOSIZE);
+}
+
+bool CARPDlg::bgetMACaddrInARP(unsigned char* IP, unsigned char* MAC)
+{
+	return m_ARPLayer->getMACinARP(IP, MAC);
+}
 
 void CARPDlg::InitFn()
 {
@@ -255,29 +279,8 @@ void CARPDlg::InitFn()
 	//
 	// 
 	//--------------------------------------------------------------------------------------
-	CRect Mainrect;
-	CRect Rect;
-	GetClientRect(&Mainrect);
-	CPoint pos;
-	pos.x = GetSystemMetrics(SM_CXSCREEN) / 2.0f - Mainrect.Width() / 2.0f;
-	pos.y = GetSystemMetrics(SM_CYSCREEN) / 2.0f - Mainrect.Height() / 2.0f;;
-
-	mDeviceAddDlg.Create(IDD_DIALOG_DEVICE_ADD, this);
-	mDeviceAddDlg.ShowWindow(SW_HIDE);
-	mDeviceAddDlg.GetClientRect(&Rect);
-	mDeviceAddDlg.SetWindowPos(NULL, pos.x - (Rect.Width() / 2), pos.y - (Rect.Height() / 2),0,0,SWP_NOSIZE);
-
-
-	mProxyEntryDlg.Create(IDD_DIALOG_PROXY_ENTRY, this);
-	mProxyEntryDlg.ShowWindow(SW_HIDE);
-	mProxyEntryDlg.GetClientRect(&Rect);
-	mProxyEntryDlg.SetWindowPos(NULL, pos.x - (Rect.Width() / 2), pos.y - (Rect.Height() / 2), 0, 0, SWP_NOSIZE);
-
-	mRoutingTabledlg.Create(IDD_DIALOG_ROUTING_TABLE, this);
-	mRoutingTabledlg.ShowWindow(SW_HIDE);
-	mRoutingTabledlg.GetClientRect(&Rect);
-	mRoutingTabledlg.SetWindowPos(NULL, pos.x - (Rect.Width() / 2), pos.y - (Rect.Height() / 2), 0, 0, SWP_NOSIZE);
-	
+	SetPosition(mDeviceAddDlg, IDD_DIALOG_DEVICE_ADD);
+	SetPosition(mRoutingTabledlg, IDD_DIALOG_ROUTING_TABLE);
 }
 
 void CARPDlg::AddProxyArpCache(const int _index, unsigned char* ip, unsigned char* addr)
@@ -289,7 +292,7 @@ void CARPDlg::AddProxyArpCache(const int _index, unsigned char* ip, unsigned cha
 	//선택된 어뎁터 이름을 불러옵니다.
 	m_ComboxAdapter.GetLBText(_index, deviceName);
 	//선택된 어뎁터의 맥 주소를 불러옵니다.
-	m_NILayer->GetMacAddress(_index, mac);
+	m_NILayer->GetMacAddress(_index, mac, OUTER);
 	//UCHAR에서 STRING으로 IP 및 ETERNET 주소를 변환합니다.
 	addrToStr(ARP_IP_TYPE, IP, ip);
 	addrToStr(ARP_ENET_TYPE, ADDR, addr);
@@ -305,7 +308,6 @@ void CARPDlg::AddProxyArpCache(const int _index, unsigned char* ip, unsigned cha
 
 void CARPDlg::OnBnClickedButtonAdd()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	mDeviceAddDlg.InitDeviceAddDlg(m_ComboxAdapter.GetCurSel());
 	mDeviceAddDlg.ShowWindow(SW_SHOW);
 }
@@ -313,7 +315,6 @@ void CARPDlg::OnBnClickedButtonAdd()
 
 void CARPDlg::OnBnClickedButtonDelete()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	POSITION pos = m_ctrlListControlProxy.GetFirstSelectedItemPosition();
 	int nItem = m_ctrlListControlProxy.GetNextSelectedItem(pos);
 	m_ARPLayer->deleteProxy(nItem);
@@ -392,38 +393,55 @@ void CARPDlg::updateTable()
 void CARPDlg::OnCbnSelchangeComboAdapter()
 {
 	CString MAC, IPV4, IPV6;
-	unsigned char* macaddr = m_NILayer->SetAdapter(m_ComboxAdapter.GetCurSel());
+	unsigned char* macaddr = m_NILayer->SetAdapter(m_ComboxAdapter.GetCurSel(), OUTER);
 	if (macaddr == nullptr) {
 		MAC = DEFAULT_EDIT_TEXT;
 	}
 	else {
 		MAC.Format(_T("%hhx:%hhx:%hhx:%hhx:%hhx:%hhx"), macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5]);
-		m_EtherLayer->SetSourceAddress(macaddr);
-		m_NILayer->GetIPAddress(IPV4, IPV6);
+		m_EtherLayer->SetSourceAddress(macaddr, OUTER);
+		m_NILayer->GetIPAddress(IPV4, IPV6, OUTER, TRUE);
 	}
 	m_editSrcHwAddr.SetWindowTextW(MAC);
 	m_SrcIPADDRESS.SetWindowTextW(IPV4);
 }
 
 
+void CARPDlg::GetADDRINFO(CString& MAC, CString IP, unsigned char* srcip, CEdit &hw, CIPAddressCtrl &ip)
+{
+	hw.GetWindowTextW(MAC);
+	ip.GetWindowTextW(IP);
+	ip.GetAddress(srcip[0], srcip[1], srcip[2], srcip[3]);	
+}
+
+void CARPDlg::SetVisible(CComboBox& adapt, CIPAddressCtrl& srcip, bool isON)
+{
+	adapt.EnableWindow(isON);
+	srcip.EnableWindow(isON);
+}
+
+void CARPDlg::SetADDR(CString& MAC, CString& IP, unsigned char* srcip, int iosel)
+{
+	m_ARPLayer->setmyAddr(MAC, IP, iosel);
+	m_IPLayer->SetSourceAddress(srcip, iosel);
+	m_IPLayer->SetDestinAddress(srcip, iosel);
+}
+
 void CARPDlg::OnBnClickedButtonSelect()
 {
-	CString MAC, IP;
-	unsigned char srcip[IP_ADDR_SIZE] = { 0, };
-
-	m_editSrcHwAddr.GetWindowTextW(MAC);
-	m_SrcIPADDRESS.GetWindowTextW(IP);
-	m_SrcIPADDRESS.GetAddress(srcip[0], srcip[1], srcip[2], srcip[3]);
+	CString MAC[2], IP[2];
+	unsigned char srcip[2][IP_ADDR_SIZE] = { 0, };
 	
 	if (m_ComboxAdapter.IsWindowEnabled()) {
-		if (MAC != DEFAULT_EDIT_TEXT && IP != "0.0.0.0") {
-			m_ComboxAdapter.EnableWindow(FALSE);
-			m_SrcIPADDRESS.EnableWindow(FALSE);
+		GetADDRINFO(MAC[INNER], IP[INNER], srcip[INNER], m_editSrcHwAddr2, m_SrcIPADDRESS2);
+		GetADDRINFO(MAC[OUTER], IP[OUTER], srcip[OUTER], m_editSrcHwAddr, m_SrcIPADDRESS);
+		if (MAC[OUTER] != DEFAULT_EDIT_TEXT && IP[OUTER] != "0.0.0.0") {
+			SetVisible(m_ComboxAdapter, m_SrcIPADDRESS, FALSE);
+			SetVisible(m_ComboxAdapter2, m_SrcIPADDRESS2, FALSE);
 			m_DstIPADDRESS.EnableWindow(TRUE);
 			m_NILayer->Receiveflip();
-			m_ARPLayer->setmyAddr(MAC, IP);
-			m_IPLayer->SetSourceAddress(srcip);
-			m_IPLayer->SetDestinAddress(srcip);
+			SetADDR(MAC[INNER], IP[INNER], srcip[INNER], INNER);
+			SetADDR(MAC[OUTER], IP[OUTER], srcip[OUTER], OUTER);
 			CDialog::SetDlgItemTextW(IDC_BUTTON_SELECT, _T("ReSelect"));
 			SetTimer(1, 1000, NULL);
 			AfxBeginThread(m_NILayer->ThreadFunction_RECEIVE, m_NILayer);
@@ -433,24 +451,27 @@ void CARPDlg::OnBnClickedButtonSelect()
 		}
 	}
 	else {
+		SetVisible(m_ComboxAdapter, m_SrcIPADDRESS, TRUE);
+		SetVisible(m_ComboxAdapter2, m_SrcIPADDRESS2, TRUE);
 		m_DstIPADDRESS.EnableWindow(FALSE);
-		m_SrcIPADDRESS.EnableWindow(TRUE);
-		m_ComboxAdapter.EnableWindow(TRUE);
+		m_NILayer->Receiveflip();
 		CDialog::SetDlgItemTextW(IDC_BUTTON_SELECT, _T("Select"));
 		KillTimer(1);
-		m_NILayer->Receiveflip();
 	}
 }
 
 void CARPDlg::OnBnClickedButtonSendArp()
 {
-	unsigned char srcip[IP_ADDR_SIZE] = {0,}, dstip[IP_ADDR_SIZE] = {0,};
-	m_SrcIPADDRESS.GetAddress(srcip[0], srcip[1], srcip[2], srcip[3]);
+	unsigned char srcip[2][IP_ADDR_SIZE] = {0,}, dstip[IP_ADDR_SIZE] = {0,};
+	m_SrcIPADDRESS.GetAddress(srcip[OUTER][0], srcip[OUTER][1], srcip[OUTER][2], srcip[OUTER][3]);
+	m_SrcIPADDRESS2.GetAddress(srcip[INNER][0], srcip[INNER][1], srcip[INNER][2], srcip[INNER][3]);
 	m_DstIPADDRESS.GetAddress(dstip[0], dstip[1], dstip[2], dstip[3]);
 
 	if (m_DstIPADDRESS.IsWindowEnabled() && !m_ComboxAdapter.IsWindowEnabled()) {
-		m_IPLayer->SetSourceAddress(srcip);
-		m_IPLayer->SetDestinAddress(dstip);
+		m_IPLayer->SetSourceAddress(srcip[INNER], INNER);
+		m_IPLayer->SetSourceAddress(srcip[OUTER], OUTER);
+		m_IPLayer->SetDestinAddress(dstip, INNER);
+		m_IPLayer->SetDestinAddress(dstip, OUTER);
 		//if (memcmp(srcip, dstip, IP_ADDR_SIZE)==0) {
 		//	AfxMessageBox(_T("Fail : Invalid Address"));
 		//	return;
@@ -463,7 +484,8 @@ void CARPDlg::OnBnClickedButtonSendArp()
 			AfxMessageBox(_T("Fail : Invalid Address"));
 			return;
 		}
-		mp_UnderLayer->Send((unsigned char*)"dummy Data", 11);
+		mp_UnderLayer->Send((unsigned char*)"dummy Data", 11, INNER);
+		mp_UnderLayer->Send((unsigned char*)"dummy Data", 11, OUTER);
 	}
 	else {
 		AfxMessageBox(_T("Fail : Set Adapter first"));
@@ -480,32 +502,27 @@ void CARPDlg::OnBnClickedButtonGArpSend()
 	unsigned char myaddr[ENET_ADDR_SIZE] = { 0, };
 	unsigned char dstip[IP_ADDR_SIZE] = { 0, };
 	m_SrcIPADDRESS.GetAddress(dstip[0], dstip[1], dstip[2], dstip[3]);
-	m_IPLayer->SetDestinAddress(dstip);
+	m_IPLayer->SetDestinAddress(dstip, INNER);
+	m_IPLayer->SetDestinAddress(dstip, OUTER);
 
-	memcpy(myaddr, m_EtherLayer->GetSourceAddress(), ENET_ADDR_SIZE);
+	memcpy(myaddr, m_EtherLayer->GetSourceAddress(INNER), ENET_ADDR_SIZE);
 	m_editHWAddr.GetWindowTextW(sgarpaddr);
 	StrToaddr(ARP_ENET_TYPE, garpaddr, sgarpaddr);
 
-	m_EtherLayer->SetSourceAddress(garpaddr);
-	mp_UnderLayer->Send((unsigned char*)"dummy", 6);
-	//m_EtherLayer->SetSourceAddress(myaddr);
+	m_EtherLayer->SetSourceAddress(garpaddr, INNER);
+	mp_UnderLayer->Send((unsigned char*)"dummy", 6, INNER);
+	m_EtherLayer->SetSourceAddress(myaddr, INNER);
 }
 
 void CARPDlg::OnBnClickedButtonAddRoutingTableEntry()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	mRoutingTabledlg.ShowWindow(SW_SHOW);
 }
 
 void CARPDlg::OnBnClickedButtonAddProxyEntry()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
-	//mProxyEntryDlg.InitDeviceAddDlg(m_ComboxAdapter.GetCurSel());
-	mProxyEntryDlg.ShowWindow(SW_SHOW);
+	// TODO: 삭제 요함
 }
-
-
-
 
 void CARPDlg::AddRoutingTable(const int _index, CString ip1, CString ip2, CString ip3, CString mFlag, CString mInterface)
 {
@@ -539,9 +556,25 @@ void CARPDlg::AddRoutingTable(const int _index, CString ip1, CString ip2, CStrin
 
 void CARPDlg::OnBnClickedButtonDelRoutingTableEntry()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	int nListIndex = m_ListStaticRoutingTable.GetItemCount();
 
 
 	m_ListStaticRoutingTable.DeleteAllItems(); 
+}
+
+
+void CARPDlg::OnCbnSelchangeComboAdapter2()
+{
+	CString MAC, IPV4, IPV6;
+	unsigned char* macaddr = m_NILayer->SetAdapter(m_ComboxAdapter2.GetCurSel(), INNER);
+	if (macaddr == nullptr) {
+		MAC = DEFAULT_EDIT_TEXT;
+	}
+	else {
+		MAC.Format(_T("%hhx:%hhx:%hhx:%hhx:%hhx:%hhx"), macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5]);
+		m_EtherLayer->SetSourceAddress(macaddr, INNER);
+		m_NILayer->GetIPAddress(IPV4, IPV6, INNER, TRUE);
+	}
+	m_editSrcHwAddr2.SetWindowTextW(MAC);
+	m_SrcIPADDRESS2.SetWindowTextW(IPV4);
 }

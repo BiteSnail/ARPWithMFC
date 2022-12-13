@@ -52,7 +52,6 @@ BOOL CRoutingTableEntry::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	// TODO:  여기에 추가 초기화 작업을 추가합니다.
 	m_RoutingInterface.SetCurSel(0);
 	return TRUE;  // return TRUE unless you set the focus to a control
 	// 예외: OCX 속성 페이지는 FALSE를 반환해야 합니다.
@@ -61,40 +60,45 @@ BOOL CRoutingTableEntry::OnInitDialog()
 
 void CRoutingTableEntry::OnBnClickedOk()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
 	CString mDestination;
 	CString mNetmask;
 	CString mGateway;
 	CString mFlag;
-	UCHAR ip[IP_ADDR_SIZE] = { 0, };
+	UCHAR dstip[IP_ADDR_SIZE] = { 0, };
+	UCHAR maskip[IP_ADDR_SIZE] = { 0, };
+	UCHAR gateway[IP_ADDR_SIZE] = { 0, };
 	CString mInterface;
-	m_IPADDRESS_Destination.GetAddress(ip[0], ip[1], ip[2], ip[3]);
-	addrToStr(ARP_IP_TYPE, mDestination, ip);
+	UCHAR flag = 0;
+	m_IPADDRESS_Destination.GetAddress(dstip[0], dstip[1], dstip[2], dstip[3]);
+	addrToStr(ARP_IP_TYPE, mDestination, dstip);
 
-	m_IPADDRESS_NetMask.GetAddress(ip[0], ip[1], ip[2], ip[3]);
-	addrToStr(ARP_IP_TYPE, mNetmask, ip);
+	m_IPADDRESS_NetMask.GetAddress(maskip[0], maskip[1], maskip[2], maskip[3]);
+	addrToStr(ARP_IP_TYPE, mNetmask, maskip);
 
-	m_IPADDRESS_GateWay.GetAddress(ip[0], ip[1], ip[2], ip[3]);
-	addrToStr(ARP_IP_TYPE, mGateway, ip);
+	m_IPADDRESS_GateWay.GetAddress(gateway[0], gateway[1], gateway[2], gateway[3]);
+	addrToStr(ARP_IP_TYPE, mGateway, gateway);
 	
 	mFlag.Empty();
 	if (m_RoutingCheckUp.GetCheck())
 	{
 
 		mFlag.AppendFormat(_T("U"));
+		flag |= IP_ROUTE_UP;
 	}
 	if (m_RoutingCheckDown.GetCheck())
 	{
-
-		mFlag.AppendFormat(_T("D"));
+		mFlag.AppendFormat(_T("G"));
+		flag |= IP_ROUTE_GATEWAY;
 	}
 	if (m_RoutingCheckHost.GetCheck())
 	{
 		mFlag.AppendFormat(_T("H"));
+		flag |= IP_ROUTE_HOST;
 
 	}
 	m_RoutingInterface.GetLBText(m_RoutingInterface.GetCurSel(), mInterface);
 	theApp.MainDlg->AddRoutingTable(0, mDestination, mNetmask, mGateway, mFlag, mInterface);
+	theApp.MainDlg->m_IPLayer->AddRouteTable(dstip, maskip, gateway, flag, m_RoutingInterface.GetCurSel());
 	
 	CDialogEx::OnOK();
 }
