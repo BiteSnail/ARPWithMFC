@@ -31,6 +31,7 @@ public:
 	// param : unsigned char*	- the data of the upperlayer
 	//         int				- the length of data
 	virtual	BOOL	Send(unsigned char*, int) { return FALSE; }
+	virtual BOOL	Send(unsigned char*, int, int) { return FALSE; }
 	// param : unsigned char*	- the data of the underlayer
 	virtual	BOOL	Receive(unsigned char* ppayload) { return FALSE; }
 	virtual	BOOL	Receive() { return FALSE; }

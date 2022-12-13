@@ -93,7 +93,10 @@ void CARPDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_EDIT_MACADDR, m_editSrcHwAddr);
 	DDX_Control(pDX, IDC_COMBO_ADAPTER, m_ComboxAdapter);
 	DDX_Control(pDX, IDC_LIST_STATIC_ROUTING_TABLE, m_ListStaticRoutingTable);
-	
+
+	DDX_Control(pDX, IDC_EDIT_MACADDR2, m_editSrcHwAddr2);
+	DDX_Control(pDX, IDC_IPADDRESS_SRC2, m_SrcIPADDRESS2);
+	DDX_Control(pDX, IDC_COMBO_ADAPTER2, m_ComboxAdapter2);
 }
 
 BEGIN_MESSAGE_MAP(CARPDlg, CDialogEx)
@@ -112,6 +115,7 @@ BEGIN_MESSAGE_MAP(CARPDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_ADD_PROXY_ENTRY, &CARPDlg::OnBnClickedButtonAddProxyEntry)
 	ON_BN_CLICKED(IDC_BUTTON_ADD_ROUTING_TABLE_ENTRY, &CARPDlg::OnBnClickedButtonAddRoutingTableEntry)
 	ON_BN_CLICKED(IDC_BUTTON_DEL_ROUTING_TABLE_ENTRY, &CARPDlg::OnBnClickedButtonDelRoutingTableEntry)
+	ON_CBN_SELCHANGE(IDC_COMBO_ADAPTER2, &CARPDlg::OnCbnSelchangeComboAdapter2)
 END_MESSAGE_MAP()
 
 
@@ -230,6 +234,7 @@ void CARPDlg::SetTable()
 void CARPDlg::SetComboBox()
 {
 	m_NILayer->SetAdapterComboBox(m_ComboxAdapter);
+	m_NILayer->SetAdapterComboBox(m_ComboxAdapter2);
 }
 
 void CARPDlg::SetPosition(CDialogEx& dlg, int IDD_dlg)
@@ -287,7 +292,7 @@ void CARPDlg::AddProxyArpCache(const int _index, unsigned char* ip, unsigned cha
 	//선택된 어뎁터 이름을 불러옵니다.
 	m_ComboxAdapter.GetLBText(_index, deviceName);
 	//선택된 어뎁터의 맥 주소를 불러옵니다.
-	m_NILayer->GetMacAddress(_index, mac);
+	m_NILayer->GetMacAddress(_index, mac, OUTER);
 	//UCHAR에서 STRING으로 IP 및 ETERNET 주소를 변환합니다.
 	addrToStr(ARP_IP_TYPE, IP, ip);
 	addrToStr(ARP_ENET_TYPE, ADDR, addr);
@@ -390,14 +395,14 @@ void CARPDlg::updateTable()
 void CARPDlg::OnCbnSelchangeComboAdapter()
 {
 	CString MAC, IPV4, IPV6;
-	unsigned char* macaddr = m_NILayer->SetAdapter(m_ComboxAdapter.GetCurSel());
+	unsigned char* macaddr = m_NILayer->SetAdapter(m_ComboxAdapter.GetCurSel(), OUTER);
 	if (macaddr == nullptr) {
 		MAC = DEFAULT_EDIT_TEXT;
 	}
 	else {
 		MAC.Format(_T("%hhx:%hhx:%hhx:%hhx:%hhx:%hhx"), macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5]);
 		m_EtherLayer->SetSourceAddress(macaddr);
-		m_NILayer->GetIPAddress(IPV4, IPV6);
+		m_NILayer->GetIPAddress(IPV4, IPV6, OUTER, TRUE);
 	}
 	m_editSrcHwAddr.SetWindowTextW(MAC);
 	m_SrcIPADDRESS.SetWindowTextW(IPV4);
@@ -416,7 +421,9 @@ void CARPDlg::OnBnClickedButtonSelect()
 	if (m_ComboxAdapter.IsWindowEnabled()) {
 		if (MAC != DEFAULT_EDIT_TEXT && IP != "0.0.0.0") {
 			m_ComboxAdapter.EnableWindow(FALSE);
+			m_ComboxAdapter2.EnableWindow(FALSE);
 			m_SrcIPADDRESS.EnableWindow(FALSE);
+			m_SrcIPADDRESS2.EnableWindow(FALSE);
 			m_DstIPADDRESS.EnableWindow(TRUE);
 			m_NILayer->Receiveflip();
 			m_ARPLayer->setmyAddr(MAC, IP);
@@ -424,7 +431,9 @@ void CARPDlg::OnBnClickedButtonSelect()
 			m_IPLayer->SetDestinAddress(srcip);
 			CDialog::SetDlgItemTextW(IDC_BUTTON_SELECT, _T("ReSelect"));
 			SetTimer(1, 1000, NULL);
-			AfxBeginThread(m_NILayer->ThreadFunction_RECEIVE, m_NILayer);
+			AfxBeginThread(m_NILayer->ThreadFunction_RECEIVE_INNER, m_NILayer);
+			AfxBeginThread(m_NILayer->ThreadFunction_RECEIVE_OUTER, m_NILayer);
+
 		}
 		else {
 			AfxMessageBox(_T("Select other Adapter"));
@@ -433,7 +442,9 @@ void CARPDlg::OnBnClickedButtonSelect()
 	else {
 		m_DstIPADDRESS.EnableWindow(FALSE);
 		m_SrcIPADDRESS.EnableWindow(TRUE);
+		m_SrcIPADDRESS2.EnableWindow(TRUE);
 		m_ComboxAdapter.EnableWindow(TRUE);
+		m_ComboxAdapter2.EnableWindow(TRUE);
 		CDialog::SetDlgItemTextW(IDC_BUTTON_SELECT, _T("Select"));
 		KillTimer(1);
 		m_NILayer->Receiveflip();
@@ -486,7 +497,7 @@ void CARPDlg::OnBnClickedButtonGArpSend()
 
 	m_EtherLayer->SetSourceAddress(garpaddr);
 	mp_UnderLayer->Send((unsigned char*)"dummy", 6);
-	//m_EtherLayer->SetSourceAddress(myaddr);
+	m_EtherLayer->SetSourceAddress(myaddr);
 }
 
 void CARPDlg::OnBnClickedButtonAddRoutingTableEntry()
@@ -497,7 +508,7 @@ void CARPDlg::OnBnClickedButtonAddRoutingTableEntry()
 
 void CARPDlg::OnBnClickedButtonAddProxyEntry()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	// TODO: 삭제 요함
 }
 
 
@@ -540,4 +551,21 @@ void CARPDlg::OnBnClickedButtonDelRoutingTableEntry()
 
 
 	m_ListStaticRoutingTable.DeleteAllItems(); 
+}
+
+
+void CARPDlg::OnCbnSelchangeComboAdapter2()
+{
+	CString MAC, IPV4, IPV6;
+	unsigned char* macaddr = m_NILayer->SetAdapter(m_ComboxAdapter2.GetCurSel(), INNER);
+	if (macaddr == nullptr) {
+		MAC = DEFAULT_EDIT_TEXT;
+	}
+	else {
+		MAC.Format(_T("%hhx:%hhx:%hhx:%hhx:%hhx:%hhx"), macaddr[0], macaddr[1], macaddr[2], macaddr[3], macaddr[4], macaddr[5]);
+		m_EtherLayer->SetSourceAddress(macaddr);
+		m_NILayer->GetIPAddress(IPV4, IPV6, INNER, TRUE);
+	}
+	m_editSrcHwAddr2.SetWindowTextW(MAC);
+	m_SrcIPADDRESS2.SetWindowTextW(IPV4);
 }

@@ -81,4 +81,8 @@ public:
 	afx_msg void OnBnClickedButtonAddProxyEntry();
 	afx_msg void OnBnClickedButtonAddRoutingTableEntry();
 	afx_msg void OnBnClickedButtonDelRoutingTableEntry();
+	afx_msg void OnCbnSelchangeComboAdapter2();
+	CEdit m_editSrcHwAddr2;
+	CIPAddressCtrl m_SrcIPADDRESS2;
+	CComboBox m_ComboxAdapter2;
 };
