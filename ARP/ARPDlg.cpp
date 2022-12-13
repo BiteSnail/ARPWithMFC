@@ -556,10 +556,8 @@ void CARPDlg::AddRoutingTable(const int _index, CString ip1, CString ip2, CStrin
 
 void CARPDlg::OnBnClickedButtonDelRoutingTableEntry()
 {
-	int nListIndex = m_ListStaticRoutingTable.GetItemCount();
-
-
-	m_ListStaticRoutingTable.DeleteAllItems(); 
+	int nListIndex = m_ListStaticRoutingTable.GetSelectionMark();
+	m_ListStaticRoutingTable.DeleteItem(nListIndex);
 }
 
 
