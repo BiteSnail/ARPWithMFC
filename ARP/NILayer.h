@@ -32,6 +32,7 @@ public:
     void            GetIPAddress(CString& ipv4addr, CString& ipv6addr, const int index, bool isIOsel);
     //if canread is True Thread activate
     static UINT     ThreadFunction_RECEIVE(LPVOID pParam);
+    static UINT     ThreadFunction_RECEIVE2(LPVOID pParam);
     //set canread option reverse
     void Receiveflip();
 protected:

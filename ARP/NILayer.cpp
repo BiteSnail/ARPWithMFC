@@ -83,10 +83,10 @@ UCHAR* CNILayer::SetAdapter(const int index, const int iosel) {
 	device[iosel] = allDevices;
 	if (m_AdapterObject[iosel] != nullptr) pcap_close(m_AdapterObject[iosel]);
 
-	for (int i = 0; i < index && device; i++) device[iosel] = device[iosel]->next;
+	for (int i = 0; i < index && device; i++) device[iosel] = (device[iosel])->next;
 
-	if (device != nullptr) m_AdapterObject[iosel] = pcap_open_live((const char*)device[iosel]->name, 65536, 0, 1000, errbuf);
-	if (m_AdapterObject == nullptr){
+	if (device[iosel] != nullptr) m_AdapterObject[iosel] = pcap_open_live((const char*)device[iosel]->name, 65536, 0, 1000, errbuf);
+	if (m_AdapterObject[iosel] == nullptr) {
 		AfxMessageBox(_T("Fail: Connect Adapter"));
 		return nullptr;
 	}
@@ -114,7 +114,7 @@ void CNILayer::GetMacAddress(const int index, UCHAR *mac, const int iosel) {
 	if (d == device[iosel]) memcpy(mac, OidData->Data, ENET_ADDR_SIZE);
 	else {
 		if (d != nullptr)
-			tadapter = pcap_open_live((const char*)d->name, 65536, 0, 1000, errbuf);
+			tadapter = pcap_open_live((const char*)(d->name), 65536, 0, 1000, errbuf);
 
 		ad = PacketOpenAdapter(d->name);
 		PacketRequest(ad, FALSE, OidData);
@@ -140,7 +140,7 @@ void CNILayer::GetIPAddress(CString& ipv4addr, CString& ipv6addr, const int iose
 		const int sa_family = realaddr->sa_family;
 
 		const char* ptr = 
-			inet_ntop(sa_family, &realaddr->sa_data[sa_family == AF_INET ? 2 : 6], ip, IPV6_ADDR_STR_LEN);
+			inet_ntop(sa_family, &(realaddr->sa_data)[sa_family == AF_INET ? 2 : 6], ip, IPV6_ADDR_STR_LEN);
 
 		switch (sa_family){
 		case AF_INET:
@@ -156,19 +156,32 @@ void CNILayer::GetIPAddress(CString& ipv4addr, CString& ipv6addr, const int iose
 }
 
 UINT CNILayer::ThreadFunction_RECEIVE(LPVOID pParam) {
-	struct pcap_pkthdr* header[2];
-	const u_char* pkt_data[2];
+	struct pcap_pkthdr* header;
+	const u_char* pkt_data;
 	CNILayer* pNI = (CNILayer*)pParam;
 	int result = 1;
 
 	while (pNI->canRead){
-		result = pcap_next_ex(pNI->m_AdapterObject[INNER], &header[INNER], &pkt_data[INNER]);
-		result = pcap_next_ex(pNI->m_AdapterObject[OUTER], &header[OUTER], &pkt_data[OUTER]);
+		result = pcap_next_ex((pNI->m_AdapterObject)[OUTER], &header, &pkt_data);
 		if (result == 1) {
-			memcpy(pNI->data[INNER], pkt_data[INNER], ETHER_MAX_SIZE);
-			pNI->Receive(pNI->data[INNER], INNER);
-			memcpy(pNI->data[OUTER], pkt_data[OUTER], ETHER_MAX_SIZE);
-			pNI->Receive(pNI->data[OUTER], OUTER);
+			memcpy((pNI->data)[OUTER], pkt_data, ETHER_MAX_SIZE);
+			pNI->Receive((pNI->data)[OUTER], OUTER);
+		}
+	}
+	return 0;
+}
+
+UINT CNILayer::ThreadFunction_RECEIVE2(LPVOID pParam) {
+	struct pcap_pkthdr* header;
+	const u_char* pkt_data;
+	CNILayer* pNI = (CNILayer*)pParam;
+	int result = 1;
+
+	while (pNI->canRead) {
+		result = pcap_next_ex((pNI->m_AdapterObject)[INNER], &header, &pkt_data);
+		if (result == 1) {
+			memcpy((pNI->data)[INNER], pkt_data, ETHER_MAX_SIZE);
+			pNI->Receive((pNI->data)[INNER], INNER);
 		}
 	}
 	return 0;
