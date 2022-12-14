@@ -81,7 +81,6 @@ void CRoutingTableEntry::OnBnClickedOk()
 	mFlag.Empty();
 	if (m_RoutingCheckUp.GetCheck())
 	{
-
 		mFlag.AppendFormat(_T("U"));
 		flag |= IP_ROUTE_UP;
 	}

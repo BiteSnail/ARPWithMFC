@@ -11,6 +11,7 @@ CIPLayer::CIPLayer(char* pName) : CBaseLayer(pName) {
  }
 
 CIPLayer::~CIPLayer() {
+
 }
 
 void CIPLayer::ResetHeader(int iosel) {
@@ -52,7 +53,7 @@ void CIPLayer::SetDestinAddress(unsigned char* pAddress, int iosel) {
 BOOL CIPLayer::Send(unsigned char* ppayload, int nlength, int iosel) {
     BOOL bSuccess = FALSE;
     memcpy(m_sHeader[iosel].ip_data, ppayload, nlength);
-    bSuccess = this->GetUnderLayer()->Send((unsigned char*)&m_sHeader, IP_HEADER_SIZE + nlength, iosel);
+    bSuccess = this->GetUnderLayer()->Send((unsigned char*)&m_sHeader[iosel], IP_HEADER_SIZE + nlength, iosel);
     return bSuccess;
 }
 
