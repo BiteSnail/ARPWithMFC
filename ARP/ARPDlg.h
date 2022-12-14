@@ -67,7 +67,7 @@ public:
 	만약 ARP Table에 해당 IP가 존재하지 않는다면 false를 반환하고 MAC을 바꾸지 않는다.
 	존재한다면 true를 반환하고 해당 IP에 해당하는 MAC ADDR을 MAC에 저장한다.*/
 	bool bgetMACaddrInARP(unsigned char* IP, unsigned char* MAC);
-	void GetADDRINFO(CString& MAC, CString IP, unsigned char* srcip, CEdit& hw, CIPAddressCtrl& ip);
+	void GetADDRINFO(CString& MAC, CString& IP, unsigned char* srcip, CEdit& hw, CIPAddressCtrl& ip);
 	void SetADDR(CString& MAC, CString& IP, unsigned char* srcip, int iosel);
 	void SetVisible(CComboBox& adapt, CIPAddressCtrl& srcip, bool isON);
 

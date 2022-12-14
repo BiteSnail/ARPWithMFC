@@ -29,6 +29,7 @@ public:
     void            deleteProxy(const int index);
     bool            getMACinARP(unsigned char* dstIP, unsigned char* MAC);
     void            Wait(DWORD dwMillisecond);
+    void            isGARP(BOOL yes);
     CARPLayer(char* pName);
     virtual ~CARPLayer();
 
@@ -95,6 +96,7 @@ public:
 protected:
     unsigned char myip[2][IP_ADDR_SIZE];
     unsigned char mymac[2][ENET_ADDR_SIZE];
+    BOOL is_Garp;
     ARP_HEADER m_sHeader;
     std::vector<ARP_NODE> m_arpTable;
     std::vector<PROXY_ARP_NODE> m_proxyTable;

@@ -35,13 +35,18 @@ bool CARPLayer::getMACinARP(unsigned char* dstIP, unsigned char* MAC)
 	return isfound;
 }
 
+void CARPLayer::isGARP(BOOL yes)
+{
+	is_Garp = !yes;
+}
+
 BOOL CARPLayer::Receive(unsigned char* ppayload, int iosel) {
 	PARP_HEADER arp_data = (PARP_HEADER)ppayload;
 	CEthernetLayer* m_ether = (CEthernetLayer*)mp_UnderLayer;
 	int index = inCache(arp_data->hardware_srcaddr);
 
 	if (memcmp(myip, arp_data->protocol_srcaddr, IP_ADDR_SIZE) == 0) {
-		//return FALSE;
+		return FALSE;
 	}
 
 	switch (arp_data->opercode) {
@@ -107,7 +112,7 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int nlength, int iosel) {
 	PIP_HEADER ip_data = (PIP_HEADER)ppayload;
 	CEthernetLayer* m_ether = (CEthernetLayer*)mp_UnderLayer;
 	unsigned char broadcastAddr[ENET_ADDR_SIZE];
-	memset(broadcastAddr, 255, ENET_ADDR_SIZE);
+	memset(broadcastAddr, 255*is_Garp, ENET_ADDR_SIZE);
 	
 	ARP_NODE newNode(ip_data->dstaddr, broadcastAddr);
 
@@ -200,8 +205,8 @@ int CARPLayer::inCache(const unsigned char* ipaddr) {
 }
 
 void CARPLayer::setmyAddr(CString MAC, CString IP, int iosel) {
-	StrToaddr(ARP_IP_TYPE, myip[iosel], IP);
-	StrToaddr(ARP_ENET_TYPE, mymac[iosel], MAC);
+	StrToaddr(ARP_IP_TYPE, &myip[iosel][0], IP);
+	StrToaddr(ARP_ENET_TYPE, &mymac[iosel][0], MAC);
 }
 
 void CARPLayer::setType(const unsigned short htype, const unsigned short ptype) {
@@ -257,6 +262,7 @@ CARPLayer::CARPLayer(char* pName)
 	setType(ARP_ENET_TYPE, ARP_IP_TYPE);
 	memset(myip, 0, IP_ADDR_SIZE);
 	memset(mymac, 0, ENET_ADDR_SIZE);
+	is_Garp = 1;
 }
 
 CARPLayer::~CARPLayer() {
