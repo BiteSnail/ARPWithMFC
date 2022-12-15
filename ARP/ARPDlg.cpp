@@ -435,6 +435,8 @@ void CARPDlg::OnBnClickedButtonSelect()
 	if (m_ComboxAdapter.IsWindowEnabled()) {
 		GetADDRINFO(MAC[INNER], IP[INNER], srcip[INNER], m_editSrcHwAddr2, m_SrcIPADDRESS2);
 		GetADDRINFO(MAC[OUTER], IP[OUTER], srcip[OUTER], m_editSrcHwAddr, m_SrcIPADDRESS);
+		OnCbnSelchangeComboAdapter();
+		OnCbnSelchangeComboAdapter2();
 
 		if (MAC[OUTER] != DEFAULT_EDIT_TEXT && IP[OUTER] != "0.0.0.0") {
 			SetVisible(m_ComboxAdapter, m_SrcIPADDRESS, FALSE);
@@ -502,16 +504,18 @@ void CARPDlg::OnBnClickedButtonGArpSend()
 {
 	CString sgarpaddr;
 	unsigned char dstip[2][IP_ADDR_SIZE] = { 0, };
+	char *a = "dummy";
+	m_ARPLayer->isGARP(TRUE);
 	m_SrcIPADDRESS.GetAddress(dstip[OUTER][0], dstip[OUTER][1], dstip[OUTER][2], dstip[OUTER][3]);
+	m_IPLayer->SetDestinAddress(dstip[OUTER], OUTER);
+	m_IPLayer->SetSourceAddress(dstip[OUTER], OUTER);
+	mp_UnderLayer->Send((unsigned char*)a, 6, OUTER);
+
 	m_SrcIPADDRESS2.GetAddress(dstip[INNER][0], dstip[INNER][1], dstip[INNER][2], dstip[INNER][3]);
 	m_IPLayer->SetDestinAddress(dstip[INNER], INNER);
-	m_IPLayer->SetDestinAddress(dstip[OUTER], OUTER);
 	m_IPLayer->SetSourceAddress(dstip[INNER], INNER);
-	m_IPLayer->SetSourceAddress(dstip[OUTER], OUTER);
-
-	m_ARPLayer->isGARP(TRUE);
-	mp_UnderLayer->Send((unsigned char*)"dummy", 6, INNER);
-	mp_UnderLayer->Send((unsigned char*)"dummy", 6, OUTER);
+	mp_UnderLayer->Send((unsigned char*)a, 6, INNER);
+	
 	m_ARPLayer->isGARP(FALSE);
 }
 

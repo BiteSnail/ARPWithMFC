@@ -15,10 +15,12 @@ CNILayer::CNILayer(char* pName)
 	: CBaseLayer(pName), device()
 	, m_AdapterObject()
 	, canRead(false)
-	, adapter()
-	, OidData(nullptr) {
+	, adapter() {
 	char errbuf[PCAP_ERRBUF_SIZE];
-	memset(data, 0, ETHER_MAX_SIZE);
+	OidData[INNER] = nullptr;
+	OidData[OUTER] = nullptr;
+	memset(data[INNER], 0, ETHER_MAX_SIZE);
+	memset(data[OUTER], 0, ETHER_MAX_SIZE);
 	try { //Adapter를 찾을 수 없는 경우 에러 발생
 		if (pcap_findalldevs(&allDevices, errbuf) == -1){
 			allDevices = NULL;
@@ -31,14 +33,17 @@ CNILayer::CNILayer(char* pName)
 	}
 
 	try {
-		OidData = (PPACKET_OID_DATA)malloc(sizeof(PACKET_OID_DATA));
-		if (OidData == nullptr) throw(CString("MALLOC FAIL"));
+		OidData[INNER] = (PPACKET_OID_DATA)malloc(sizeof(PACKET_OID_DATA));
+		OidData[OUTER] = (PPACKET_OID_DATA)malloc(sizeof(PACKET_OID_DATA));
+		if (OidData[INNER] == nullptr) throw(CString("MALLOC FAIL"));
+		if (OidData[OUTER] == nullptr) throw(CString("MALLOC FAIL"));
 
-		OidData->Oid = 0x01010101;
-		OidData->Length = 6;
+		OidData[INNER]->Oid = 0x01010101;
+		OidData[OUTER]->Oid = 0x01010101;
+		OidData[INNER]->Length = 6;
+		OidData[OUTER]->Length = 6;
 		m_AdapterObject[INNER] = nullptr;
 		m_AdapterObject[OUTER] = nullptr;
-		memset(data, 0, ETHER_MAX_SIZE);
 	}
 	catch (CString errorInfo) {
 		AfxMessageBox(errorInfo);
@@ -63,8 +68,8 @@ BOOL CNILayer::Receive(unsigned char* pkt, int iosel) {
 	return TRUE;
 }
 
-BOOL CNILayer::Send(unsigned char* ppayload, int nlength, int index) {
-	if (pcap_sendpacket(m_AdapterObject[index], ppayload, nlength)) {
+BOOL CNILayer::Send(unsigned char* ppayload, int nlength, int iosel) {
+	if (pcap_sendpacket(m_AdapterObject[iosel], ppayload, nlength)) {
 		AfxMessageBox(_T("Fail: Send Packet!"));
 		return FALSE;
 	}
@@ -92,10 +97,10 @@ UCHAR* CNILayer::SetAdapter(const int index, const int iosel) {
 	}
 
 	adapter[iosel] = PacketOpenAdapter(device[iosel]->name);
-	PacketRequest(adapter[iosel], FALSE, OidData);
+	PacketRequest(adapter[iosel], FALSE, OidData[iosel]);
 
-	PacketCloseAdapter(adapter[iosel]);
-	return (OidData->Data);
+	//PacketCloseAdapter(adapter[iosel]);
+	return (OidData[iosel]->Data);
 }
 
 void CNILayer::GetMacAddressList(CStringArray& adapterlist) {
@@ -111,17 +116,17 @@ void CNILayer::GetMacAddress(const int index, UCHAR *mac, const int iosel) {
 	char errbuf[PCAP_ERRBUF_SIZE];
 	for (int i = 0; i < index && d; i++) d = d->next;
 
-	if (d == device[iosel]) memcpy(mac, OidData->Data, ENET_ADDR_SIZE);
+	if (d == device[iosel]) memcpy(mac, OidData[iosel]->Data, ENET_ADDR_SIZE);
 	else {
 		if (d != nullptr)
 			tadapter = pcap_open_live((const char*)(d->name), 65536, 0, 1000, errbuf);
 
 		ad = PacketOpenAdapter(d->name);
-		PacketRequest(ad, FALSE, OidData);
+		PacketRequest(ad, FALSE, OidData[iosel] );
 
-		memcpy(mac, OidData->Data, ENET_ADDR_SIZE);
-		PacketCloseAdapter(ad);
-		pcap_close(tadapter);
+		memcpy(mac, OidData[iosel]->Data, ENET_ADDR_SIZE);
+		//PacketCloseAdapter(ad);
+		//pcap_close(tadapter);
 	}
 }
 

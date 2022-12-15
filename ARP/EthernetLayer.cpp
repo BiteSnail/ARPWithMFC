@@ -23,7 +23,7 @@ void CEthernetLayer::ResetHeader(int iosel)
 {
 	memset(m_sHeader[iosel].enet_dstaddr, 0, 6);
 	memset(m_sHeader[iosel].enet_srcaddr, 0, 6);
-	memset(m_sHeader[iosel].enet_data, ETHER_MAX_DATA_SIZE, 6);
+	memset(m_sHeader[iosel].enet_data, 0, ETHER_MAX_DATA_SIZE);
 	m_sHeader[iosel].enet_type = 0;
 }
 
@@ -88,6 +88,12 @@ BOOL CEthernetLayer::Receive(unsigned char* ppayload, int iosel)
 	else if (memcmp(pFrame->enet_dstaddr, broad, ENET_ADDR_SIZE) == 0) {
 		if (pFrame->enet_type == ETHER_ARP_TYPE)
 			bSuccess = mp_aUpperLayer[1]->Receive(pFrame->enet_data, iosel);
+		else if (pFrame->enet_type == ETHER_IP_TYPE)
+			bSuccess = mp_aUpperLayer[0]->Receive(pFrame->enet_data, iosel);
+	}
+	else {
+		if (pFrame->enet_type == ETHER_IP_TYPE)
+			bSuccess = mp_aUpperLayer[0]->Receive(pFrame->enet_data, iosel);
 	}
 
 	return bSuccess;
