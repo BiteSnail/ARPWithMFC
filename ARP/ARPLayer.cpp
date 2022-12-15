@@ -21,7 +21,8 @@ CARPLayer::_ARP_NODE::_ARP_NODE(const struct _ARP_NODE& ot) {
 }
 
 inline void CARPLayer::ResetHeader() {
-	m_sHeader = ARP_HEADER();
+	m_sHeader[INNER] = ARP_HEADER();
+	m_sHeader[OUTER] = ARP_HEADER();
 }
 
 bool CARPLayer::getMACinARP(unsigned char* dstIP, unsigned char* MAC)
@@ -35,13 +36,18 @@ bool CARPLayer::getMACinARP(unsigned char* dstIP, unsigned char* MAC)
 	return isfound;
 }
 
+void CARPLayer::isGARP(BOOL yes)
+{
+	is_Garp = !yes;
+}
+
 BOOL CARPLayer::Receive(unsigned char* ppayload, int iosel) {
 	PARP_HEADER arp_data = (PARP_HEADER)ppayload;
 	CEthernetLayer* m_ether = (CEthernetLayer*)mp_UnderLayer;
 	int index = inCache(arp_data->hardware_srcaddr);
 
 	if (memcmp(myip, arp_data->protocol_srcaddr, IP_ADDR_SIZE) == 0) {
-		//return FALSE;
+		return FALSE;
 	}
 
 	switch (arp_data->opercode) {
@@ -107,13 +113,13 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int nlength, int iosel) {
 	PIP_HEADER ip_data = (PIP_HEADER)ppayload;
 	CEthernetLayer* m_ether = (CEthernetLayer*)mp_UnderLayer;
 	unsigned char broadcastAddr[ENET_ADDR_SIZE];
-	memset(broadcastAddr, 255, ENET_ADDR_SIZE);
+	memset(broadcastAddr, 255*is_Garp, ENET_ADDR_SIZE);
 	
-	ARP_NODE newNode(ip_data->dstaddr, broadcastAddr);
+	ARP_NODE newNode(ip_data->ip_dstaddr, broadcastAddr);
 
-	if (memcmp(ip_data->srcaddr, ip_data->dstaddr, IP_ADDR_SIZE) != 0) {
+	if (memcmp(ip_data->ip_srcaddr, ip_data->ip_dstaddr, IP_ADDR_SIZE) != 0) {
 		//check given address is in arp cache table
-		int idx = inCache(ip_data->dstaddr);
+		int idx = inCache(ip_data->ip_dstaddr);
 		if (idx != -1) {
 			m_arpTable[idx] = newNode;
 		}
@@ -123,11 +129,11 @@ BOOL CARPLayer::Send(unsigned char* ppayload, int nlength, int iosel) {
 	}
 	m_ether->SetDestinAddress(broadcastAddr, iosel);
 	m_ether->SetType(ETHER_ARP_TYPE, iosel);
-	setOpcode(ARP_OPCODE_REQUEST);
-	setSrcAddr(m_ether->GetSourceAddress(iosel), ip_data->srcaddr);
-	setDstAddr(broadcastAddr, ip_data->dstaddr);
+	setOpcode(ARP_OPCODE_REQUEST, iosel);
+	setSrcAddr(m_ether->GetSourceAddress(iosel), ip_data->ip_srcaddr, iosel);
+	setDstAddr(broadcastAddr, ip_data->ip_dstaddr, iosel);
 
-	return mp_UnderLayer->Send((unsigned char*)&m_sHeader, ARP_HEADER_SIZE, iosel);
+	return mp_UnderLayer->Send((unsigned char*)&m_sHeader[iosel], ARP_HEADER_SIZE, iosel);
 }
 
 void CARPLayer::Wait(DWORD dwMillisecond)
@@ -148,6 +154,10 @@ void CARPLayer::Wait(DWORD dwMillisecond)
 
 BOOL CARPLayer::RSend(unsigned char* ppayload, int nlength, unsigned char* gatewayIP, int iosel) {
 	PIP_HEADER ip_data = (PIP_HEADER)ppayload;
+	unsigned char temp[IP_MAX_SIZE] = { 0, };
+	nlength = nlength > IP_MAX_SIZE ? IP_MAX_SIZE : nlength;
+	memcpy(temp, ppayload, nlength);
+	
 	CEthernetLayer* m_ether = (CEthernetLayer*)mp_UnderLayer;
 	int idx = 0;
 
@@ -157,7 +167,7 @@ BOOL CARPLayer::RSend(unsigned char* ppayload, int nlength, unsigned char* gatew
 		{
 			m_ether->SetDestinAddress(m_proxyTable[i].hardware_addr, iosel);
 			m_ether->SetType(ETHER_IP_TYPE, iosel);
-			return mp_UnderLayer->Send(ppayload, nlength, iosel);
+			return mp_UnderLayer->Send(temp, nlength, iosel);
 		}
 	}
 
@@ -165,11 +175,10 @@ BOOL CARPLayer::RSend(unsigned char* ppayload, int nlength, unsigned char* gatew
 	idx = inCache(gatewayIP);
 	if (idx == -1) {
 		//arp table에도 없으면 해당 ip주소로 arp request 날려보기
-		UCHAR temp[IP_ADDR_SIZE] = { 0, };
-		memcpy(temp, ip_data->dstaddr, IP_ADDR_SIZE);
-		memcpy(ip_data->dstaddr, gatewayIP, IP_ADDR_SIZE);
-		Send(ppayload, nlength, iosel);
-		memcpy(ip_data->dstaddr, temp, IP_ADDR_SIZE);
+		IP_HEADER forarp;
+		memcpy(forarp.ip_srcaddr, myip[iosel], IP_ADDR_SIZE);
+		memcpy(forarp.ip_dstaddr, gatewayIP, IP_ADDR_SIZE);
+		Send((unsigned char*)&forarp, nlength, iosel);
 		
 		Wait(3000);
 		
@@ -179,16 +188,14 @@ BOOL CARPLayer::RSend(unsigned char* ppayload, int nlength, unsigned char* gatew
 			return FALSE;
 		}
 	}
-	
 	//arp table에 있으면 해당 주소로 보내줌
 	m_ether->SetDestinAddress(m_arpTable[idx].hardware_addr, iosel);
 	m_ether->SetType(ETHER_IP_TYPE, iosel);
-	return mp_UnderLayer->Send(ppayload, nlength, iosel);
-	
+	return mp_UnderLayer->Send(temp, nlength, iosel);
 }
 
 
-int CARPLayer::inCache(const unsigned char* ipaddr) {
+int CARPLayer::inCache(unsigned char* ipaddr) {
 	int res = -1;
 	for (int i = 0; i < m_arpTable.size(); i++) {
 		if (m_arpTable[i] == ipaddr) {
@@ -200,49 +207,49 @@ int CARPLayer::inCache(const unsigned char* ipaddr) {
 }
 
 void CARPLayer::setmyAddr(CString MAC, CString IP, int iosel) {
-	StrToaddr(ARP_IP_TYPE, myip[iosel], IP);
-	StrToaddr(ARP_ENET_TYPE, mymac[iosel], MAC);
+	StrToaddr(ARP_IP_TYPE, &myip[iosel][0], IP);
+	StrToaddr(ARP_ENET_TYPE, &mymac[iosel][0], MAC);
 }
 
-void CARPLayer::setType(const unsigned short htype, const unsigned short ptype) {
-	m_sHeader.hardware_type = htype;
-	m_sHeader.protocol_type = ptype;
+void CARPLayer::setType(const unsigned short htype, const unsigned short ptype, int iosel) {
+	m_sHeader[iosel].hardware_type = htype;
+	m_sHeader[iosel].protocol_type = ptype;
 
-	switch (m_sHeader.hardware_type) {
+	switch (m_sHeader[iosel].hardware_type) {
 	case ARP_ENET_TYPE:
-		m_sHeader.hardware_length = ENET_ADDR_SIZE;
+		m_sHeader[iosel].hardware_length = ENET_ADDR_SIZE;
 		break;
 	default:
 		throw("Hardware Type Error!");
 	}
 
-	switch (m_sHeader.protocol_type) {
+	switch (m_sHeader[iosel].protocol_type) {
 	case ARP_IP_TYPE:
-		m_sHeader.protocol_length = IP_ADDR_SIZE;
+		m_sHeader[iosel].protocol_length = IP_ADDR_SIZE;
 		break;
 	default:
 		throw("Protocol Type Error!");
 	}
 }
 
-void CARPLayer::setOpcode(const unsigned short opcode) {
+void CARPLayer::setOpcode(const unsigned short opcode, int iosel) {
 	if (opcode >= ARP_OPCODE_REQUEST && opcode <= ARP_OPCODE_RREPLY) {
-		m_sHeader.opercode = opcode;
+		m_sHeader[iosel].opercode = opcode;
 	}
 	else
 		throw("Operator code Error!");
 }
 
-void CARPLayer::setSrcAddr(const unsigned char enetAddr[], const unsigned char ipAddr[]) {
-	memcpy(m_sHeader.hardware_srcaddr, enetAddr, ENET_ADDR_SIZE);
-	memcpy(m_sHeader.protocol_srcaddr, ipAddr, IP_ADDR_SIZE);
+void CARPLayer::setSrcAddr(unsigned char enetAddr[], unsigned char ipAddr[], int iosel) {
+	memcpy(m_sHeader[iosel].hardware_srcaddr, enetAddr, ENET_ADDR_SIZE);
+	memcpy(m_sHeader[iosel].protocol_srcaddr, ipAddr, IP_ADDR_SIZE);
 }
-void CARPLayer::setDstAddr(const unsigned char enetAddr[], const unsigned char ipAddr[]) {
-	memcpy(m_sHeader.hardware_dstaddr, enetAddr, ENET_ADDR_SIZE);
-	memcpy(m_sHeader.protocol_dstaddr, ipAddr, IP_ADDR_SIZE);
+void CARPLayer::setDstAddr(unsigned char enetAddr[], unsigned char ipAddr[], int iosel) {
+	memcpy(m_sHeader[iosel].hardware_dstaddr, enetAddr, ENET_ADDR_SIZE);
+	memcpy(m_sHeader[iosel].protocol_dstaddr, ipAddr, IP_ADDR_SIZE);
 }
 
-void CARPLayer::swapaddr(unsigned char lAddr[], unsigned char rAddr[], const unsigned char size) {
+void CARPLayer::swapaddr(unsigned char lAddr[], unsigned char rAddr[], unsigned char size) {
 	unsigned char tempAddr[ENET_ADDR_SIZE] = { 0, };
 
 	memcpy(tempAddr, lAddr, size);
@@ -254,9 +261,11 @@ CARPLayer::CARPLayer(char* pName)
 	: CBaseLayer(pName)
 {
 	ResetHeader();
-	setType(ARP_ENET_TYPE, ARP_IP_TYPE);
+	setType(ARP_ENET_TYPE, ARP_IP_TYPE, INNER);
+	setType(ARP_ENET_TYPE, ARP_IP_TYPE, OUTER);
 	memset(myip, 0, IP_ADDR_SIZE);
 	memset(mymac, 0, ENET_ADDR_SIZE);
+	is_Garp = 1;
 }
 
 CARPLayer::~CARPLayer() {

@@ -11,6 +11,7 @@ CIPLayer::CIPLayer(char* pName) : CBaseLayer(pName) {
  }
 
 CIPLayer::~CIPLayer() {
+
 }
 
 void CIPLayer::ResetHeader(int iosel) {
@@ -52,7 +53,7 @@ void CIPLayer::SetDestinAddress(unsigned char* pAddress, int iosel) {
 BOOL CIPLayer::Send(unsigned char* ppayload, int nlength, int iosel) {
     BOOL bSuccess = FALSE;
     memcpy(m_sHeader[iosel].ip_data, ppayload, nlength);
-    bSuccess = this->GetUnderLayer()->Send((unsigned char*)&m_sHeader, IP_HEADER_SIZE + nlength, iosel);
+    bSuccess = this->GetUnderLayer()->Send((unsigned char*)&m_sHeader[iosel], IP_HEADER_SIZE + nlength, iosel);
     return bSuccess;
 }
 
@@ -136,10 +137,10 @@ void CIPLayer::Routing(unsigned char* dest_ip, unsigned char* ppayload, int iose
         for (int i = 0; i < IP_ADDR_SIZE; i++)masked[i] = dest_ip[i] & row.netmask[i];        //마스킹 해보고
         if (memcmp(masked, row.destination_ip, IP_ADDR_SIZE)==0) {       //IP addr의 결과가 같다면,
             if ((row.flag & IP_ROUTE_UP) && (row.flag & IP_ROUTE_HOST)) {    
-                mp_UnderLayer->RSend(ppayload, pFrame->tlength, dest_ip, iosel);
+                mp_UnderLayer->RSend(ppayload, pFrame->tlength, dest_ip, row._interface);
             }
             else if ((row.flag & IP_ROUTE_UP)&& (row.flag & IP_ROUTE_GATEWAY)) {
-                mp_UnderLayer->RSend(ppayload, pFrame->tlength, row.gateway, iosel); //Gateway IP의 MAC address를 얻기 위해...
+                mp_UnderLayer->RSend(ppayload, pFrame->tlength, row.gateway, row._interface); //Gateway IP의 MAC address를 얻기 위해...
             }
             return;
         }
