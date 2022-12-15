@@ -58,7 +58,7 @@ BOOL CEthernetLayer::Send(unsigned char* ppayload, int nlength, int iosel)
 	// 윗 계층에서 받은 App 계층의 Frame 길이만큼을 Ethernet계층의 data로 넣는다.
 	memcpy(m_sHeader[iosel].enet_data, ppayload, nlength);
 	BOOL bSuccess = FALSE;
-	bSuccess = this->GetUnderLayer()->Send((unsigned char*)&m_sHeader[iosel], ETHER_HEADER_SIZE + nlength, iosel);
+	bSuccess = mp_UnderLayer->Send((unsigned char*)&m_sHeader[iosel], ETHER_HEADER_SIZE + nlength > ETHER_MAX_SIZE ? ETHER_MAX_SIZE: ETHER_HEADER_SIZE+nlength, iosel);
 	return bSuccess;
 }
 
@@ -89,10 +89,6 @@ BOOL CEthernetLayer::Receive(unsigned char* ppayload, int iosel)
 		if (pFrame->enet_type == ETHER_ARP_TYPE)
 			bSuccess = mp_aUpperLayer[1]->Receive(pFrame->enet_data, iosel);
 		else if (pFrame->enet_type == ETHER_IP_TYPE)
-			bSuccess = mp_aUpperLayer[0]->Receive(pFrame->enet_data, iosel);
-	}
-	else {
-		if (pFrame->enet_type == ETHER_IP_TYPE)
 			bSuccess = mp_aUpperLayer[0]->Receive(pFrame->enet_data, iosel);
 	}
 

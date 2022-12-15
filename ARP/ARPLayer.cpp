@@ -154,6 +154,10 @@ void CARPLayer::Wait(DWORD dwMillisecond)
 
 BOOL CARPLayer::RSend(unsigned char* ppayload, int nlength, unsigned char* gatewayIP, int iosel) {
 	PIP_HEADER ip_data = (PIP_HEADER)ppayload;
+	unsigned char temp[IP_MAX_SIZE] = { 0, };
+	nlength = nlength > IP_MAX_SIZE ? IP_MAX_SIZE : nlength;
+	memcpy(temp, ppayload, nlength);
+	
 	CEthernetLayer* m_ether = (CEthernetLayer*)mp_UnderLayer;
 	int idx = 0;
 
@@ -163,7 +167,7 @@ BOOL CARPLayer::RSend(unsigned char* ppayload, int nlength, unsigned char* gatew
 		{
 			m_ether->SetDestinAddress(m_proxyTable[i].hardware_addr, iosel);
 			m_ether->SetType(ETHER_IP_TYPE, iosel);
-			return mp_UnderLayer->Send(ppayload, nlength, iosel);
+			return mp_UnderLayer->Send(temp, nlength, iosel);
 		}
 	}
 
@@ -171,11 +175,10 @@ BOOL CARPLayer::RSend(unsigned char* ppayload, int nlength, unsigned char* gatew
 	idx = inCache(gatewayIP);
 	if (idx == -1) {
 		//arp table에도 없으면 해당 ip주소로 arp request 날려보기
-		UCHAR temp[IP_ADDR_SIZE] = { 0, };
-		memcpy(temp, ip_data->ip_dstaddr, IP_ADDR_SIZE);
-		memcpy(ip_data->ip_dstaddr, gatewayIP, IP_ADDR_SIZE);
-		Send(ppayload, nlength, iosel);
-		memcpy(ip_data->ip_dstaddr, temp, IP_ADDR_SIZE);
+		IP_HEADER forarp;
+		memcpy(forarp.ip_srcaddr, myip[iosel], IP_ADDR_SIZE);
+		memcpy(forarp.ip_dstaddr, gatewayIP, IP_ADDR_SIZE);
+		Send((unsigned char*)&forarp, nlength, iosel);
 		
 		Wait(3000);
 		
@@ -185,12 +188,10 @@ BOOL CARPLayer::RSend(unsigned char* ppayload, int nlength, unsigned char* gatew
 			return FALSE;
 		}
 	}
-	
 	//arp table에 있으면 해당 주소로 보내줌
 	m_ether->SetDestinAddress(m_arpTable[idx].hardware_addr, iosel);
 	m_ether->SetType(ETHER_IP_TYPE, iosel);
-	return mp_UnderLayer->Send(ppayload, nlength, iosel);
-	
+	return mp_UnderLayer->Send(temp, nlength, iosel);
 }
 
 

@@ -35,7 +35,7 @@ public:
         unsigned short  tlength;     // Total length
 
         unsigned short  id;          // Unique identifier
-        unsigned char   offset;      // Fragment offset field
+        unsigned short  offset;      // Fragment offset field
 
         unsigned char   ttl;         // Time to live
         unsigned char   ptype;       // Protocol type
